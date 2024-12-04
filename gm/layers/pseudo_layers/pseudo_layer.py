@@ -9,7 +9,8 @@ from gm.layers.weights_storage import WeightsStorage
 class PseudoLayer(ShapedLayer):
     _weights_storage: WeightsStorage
     _storage_index: int
-    _pseudo_shapes: List[torch.Size]
+    _pseudo_shapes: List[torch.Size] | None
+    _registered: bool
 
     def __init__(
             self,
@@ -19,8 +20,16 @@ class PseudoLayer(ShapedLayer):
         super().__init__(**kwargs)
 
         self._weights_storage = weights_storage
-        self._storage_index = weights_storage.add_layer(self)
-        self._pseudo_shapes = []
+        self._pseudo_shapes = None
+        self._registered = False
+
+    def register_layer(self):
+        self._registered = True
+
+        if self._pseudo_shapes is None:
+            raise "define _pseudo_shapes attribute"
+
+        self._storage_index = self._weights_storage.add_layer(self)
 
     def __call__(
             self,
@@ -28,6 +37,9 @@ class PseudoLayer(ShapedLayer):
             *args,
             **kwargs,
     ):
+        if self._registered is False:
+            raise "call PseudoLayer.register_layer() first"
+
         return super().__call__(self._weights_storage(self._storage_index, selector), *args, **kwargs)
 
     @property

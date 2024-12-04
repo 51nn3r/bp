@@ -8,6 +8,7 @@ from torch import nn
 from torch.nn import init
 
 from gm.layers.shaped_layer import ShapedLayer
+from gm.utils import move_to_device
 
 
 class WeightsStorage(nn.Module):
@@ -17,16 +18,18 @@ class WeightsStorage(nn.Module):
     # list of layers, can be used to get layer index
     _layers: List[ShapedLayer]
     # layer_index -> group_index
-    _layers_distribution: Dict[int, torch.Tensor | None]
+    _layers_distribution: List[torch.Tensor | None]
     # offsets for each layer in the corresponding group, the order matches _layers
     _layers_offsets: List[int]
     # list of weights for each layer, [layers_count, current_layer_shapes]
     _storage: List[List[nn.Parameter]]
+    _device: torch._C.device | None
 
     def __init__(
             self,
             groups_count: int,
             storage_size: int,
+            device: torch._C.device | None,
             **kwargs,
     ):
         super().__init__(**kwargs)
@@ -34,9 +37,10 @@ class WeightsStorage(nn.Module):
         self._groups_count = groups_count
         self._storage_size = storage_size
         self._layers = []
-        self._layers_distribution = {}
+        self._layers_distribution = []
         self._layers_offsets = []
         self._storage = []
+        self._device = device
 
     def add_layer(
             self,
@@ -44,7 +48,7 @@ class WeightsStorage(nn.Module):
     ) -> int:
         layer_id = len(self._layers)
         self._layers.append(layer)
-        self._layers_distribution[layer_id] = None
+        self._layers_distribution.append(None)
         return layer_id
 
     def build_storage(self):
@@ -73,13 +77,18 @@ class WeightsStorage(nn.Module):
                 raise "no such layer"
 
             layer_index = self._layers.index(layer)
-            self._layers_distribution[layer_index] = torch.tensor(layer_index)
+            self._layers_distribution[layer_index] = torch.tensor(group_index)
 
             avg_params_count = (unused_params_count + current_params_count) / (self._groups_count - group_index)
             layers_count -= 1
             if current_params_count >= avg_params_count:
                 current_params_count = 0
                 group_index += 1
+
+        if self._device is not None:
+            self._layers_distribution = move_to_device(self._layers_distribution, self._device)
+
+        # self._layers_distribution = self._layers_distribution.to
 
         if group_index != self._groups_count:
             logging.warning(f'real groups count ({group_index}) != wanted groups count ({self._groups_count})')
@@ -97,15 +106,16 @@ class WeightsStorage(nn.Module):
 
             self._storage.append(layer_weights)
 
+        for layer_index, layer_weights in enumerate(self._storage):
+            for weight_index, weights in enumerate(layer_weights):
+                self.register_parameter(f'l{layer_index}w{weight_index}', weights)
+
     def forward(
             self,
             layer_index: int,
             selector: torch.Tensor,
     ) -> List[torch.Tensor]:
         """  selector shape is [batch_size, groups_count] from [0, storage_size]  """
-
-        if layer_index >= self._groups_count:
-            raise "invalid index"
 
         group_index = self._layers_distribution[layer_index]
         weights_index: torch.Tensor = torch.squeeze(torch.index_select(selector, -1, group_index))
