@@ -12,7 +12,7 @@ from gm.layers.pseudo_layers.pseudo_linear import PseudoLinear
 
 PRINT_GRAD = False
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
 

@@ -88,8 +88,6 @@ class WeightsStorage(nn.Module):
         if self._device is not None:
             self._layers_distribution = move_to_device(self._layers_distribution, self._device)
 
-        # self._layers_distribution = self._layers_distribution.to
-
         if group_index != self._groups_count:
             logging.warning(f'real groups count ({group_index}) != wanted groups count ({self._groups_count})')
 
