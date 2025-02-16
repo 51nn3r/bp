@@ -1,3 +1,5 @@
-torch
+torch~=2.5.1+cu124
 torchvision
 numpy
+
+transformers~=4.48.3
