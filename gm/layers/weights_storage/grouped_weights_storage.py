@@ -7,11 +7,15 @@ import torch
 from torch import nn
 from torch.nn import init
 
+from gm.layers.pseudo_layers.configs.gm_config import GrossMachineConfig
 from gm.layers.shaped_layer import ShapedLayer
 from gm.utils import move_to_device
+from gm.layers.weights_storage.weights_storage import WeightsStorage
+
+from gm.settings import META_DEVICE
 
 
-class WeightsStorage(nn.Module):
+class GroupedWeightsStorage(WeightsStorage):
     _groups_count: int
     _storage_size: int
 
@@ -29,7 +33,7 @@ class WeightsStorage(nn.Module):
             self,
             groups_count: int,
             storage_size: int,
-            device: torch._C.device | None,
+            device: torch._C.device | None = None,
             **kwargs,
     ):
         super().__init__(**kwargs)
@@ -48,10 +52,13 @@ class WeightsStorage(nn.Module):
     ) -> int:
         layer_id = len(self._layers)
         self._layers.append(layer)
+        self._storage.append([nn.Parameter(torch.empty(shape, device=META_DEVICE)) for shape in layer.shapes])
         self._layers_distribution.append(None)
         return layer_id
 
     def build_storage(self):
+        super().build_storage()
+
         # init useful params
         shapes = []
         for layer in self._layers:
@@ -94,29 +101,16 @@ class WeightsStorage(nn.Module):
         if unused_params_count > 0:
             logging.critical(f'not all params are used: {unused_params_count} unused')
 
-        # init weights
-        for layer in self._layers:
-            layer_weights = [nn.Parameter(torch.Tensor(torch.Size([self._storage_size]) + shape))
-                             for shape in layer.shapes]
-
-            for weights in layer_weights:
-                init.xavier_normal(weights)
-
-            self._storage.append(layer_weights)
-
-        for layer_index, layer_weights in enumerate(self._storage):
-            for weight_index, weights in enumerate(layer_weights):
-                self.register_parameter(f'l{layer_index}w{weight_index}', weights)
 
     def forward(
             self,
             layer_index: int,
-            selector: torch.Tensor,
+            config: GrossMachineConfig,
     ) -> List[torch.Tensor]:
         """  selector shape is [batch_size, groups_count] from [0, storage_size]  """
 
         group_index = self._layers_distribution[layer_index]
-        weights_index: torch.Tensor = torch.squeeze(torch.index_select(selector, -1, group_index))
+        weights_index: torch.Tensor = torch.squeeze(torch.index_select(config.selector, -1, group_index))
 
         layer_weights: List[nn.Parameter] = self._storage[layer_index]
 
