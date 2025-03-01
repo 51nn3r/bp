@@ -5,15 +5,19 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from torch import optim
 
-from gm.layers.weights_storage import WeightsStorage
+from gm.layers.pseudo_layers.argument_parsing_strategy.argument_parsing_strategy import ArgumentParsingStrategy
+from gm.layers.weights_storage.grouped_weights_storage import GroupedWeightsStorage
+from gm.layers.pseudo_layers.configs.gm_config import GrossMachineConfig
 from gm.layers.shaped_layer import ShapedLayer
 
 from gm.layers.pseudo_layers.pseudo_linear import PseudoLinear
 
 PRINT_GRAD = False
 
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+# device = torch.device("cpu")
 
 
 class TestShapedLayer(ShapedLayer):
@@ -45,7 +49,12 @@ class TestNN(nn.Module):
 
         self._inp_dim = inp_dim
         self._out_dim = out_dim
-        self._weights_storage = WeightsStorage(groups_count, storage_size, device)
+        self._weights_storage = GroupedWeightsStorage(
+            ArgumentParsingStrategy(GroupedWeightsStorage.ADDITIONAL_FORWARD_ARGUMENTS),
+            groups_count,
+            storage_size,
+            device
+        )
         self._layers = [PseudoLinear(self._weights_storage, inp_dim, out_dim) for _ in range(16)]
         self._weights_storage.build_storage()
 

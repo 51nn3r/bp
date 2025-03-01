@@ -4,23 +4,28 @@ import torch
 from torch import nn
 from torch.nn import init
 
-from gm.layers.pseudo_layers.configs.pseudo_layer_config import PseudoLayerConfig
+from gm.layers.pseudo_layers.argument_parsing_strategy.argument_parsing_strategy import ArgumentParsingStrategy
 from gm.layers.shaped_layer import ShapedLayer
+
+from gm.settings import META_DEVICE
 
 
 class WeightsStorage(nn.Module):
-    # list of layers, can be used to get layer index
+    _argument_parsing_strategy: ArgumentParsingStrategy
+    # List of layers, can be used to get layer index
     _layers: List[ShapedLayer]
-    # list of weights for each layer, [layers_count, current_layer_shapes]
+    # List of weights for each layer, [layers_count, current_layer_shapes]
     _storage: List[List[nn.Parameter]]
     _device: torch._C.device | None
 
     def __init__(
             self,
+            argument_parsing_strategy: ArgumentParsingStrategy,
             **kwargs,
     ):
         super().__init__(**kwargs)
 
+        self._argument_parsing_strategy = argument_parsing_strategy
         self._layers = []
         self._storage = []
 
@@ -28,28 +33,92 @@ class WeightsStorage(nn.Module):
             self,
             layer: ShapedLayer
     ) -> int:
-        layer_id = len(self._layers)
+        """
+        Registers a new layer and creates a placeholder for its weights.
+        The placeholder is constructed using meta tensors so that it has the correct shape
+        without allocating real memory.
+
+        :param layer: The ShapedLayer instance to add.
+        :return: The index of the added layer.
+        """
+        layer_idx = len(self._layers)
         self._layers.append(layer)
-        return layer_id
+        # For each expected weight shape in the layer, create a placeholder parameter on the META_DEVICE
+        self._storage.append([
+            nn.Parameter(torch.empty(shape, device=META_DEVICE)) for shape in layer.shapes
+        ])
+        return layer_idx
 
     def build_storage(self):
-        # init weights
-        for layer in self._layers:
-            layer_weights = [nn.Parameter(torch.Tensor(torch.Size([self._storage_size]) + shape))
-                             for shape in layer.shapes]
+        """
+        Initializes the weights for all registered layers.
+        For each layer, creates new parameters with shape: (storage_size, *weight_shape),
+        initializes them using Xavier normal initialization, and registers them as module parameters.
+        """
+        for layer_idx, layer in enumerate(self._layers):
 
+            # Create a new list of weight parameters for the current layer.
+            layer_weights = [
+                nn.Parameter(torch.Tensor(shape))
+                for shape in layer.shapes
+            ]
+
+            # Initialize each weight parameter using Xavier normal initialization.
             for weights in layer_weights:
-                init.xavier_normal(weights)
+                if weights.dim() > 1:
+                    init.xavier_normal_(weights)
+                else:
+                    init.normal_(weights)
 
-            self._storage.append(layer_weights)
+            # Replace the placeholder parameters with the newly initialized weights,
+            # and register each parameter with the module.
+            for weight_idx, weights in enumerate(layer_weights):
+                if self._storage[layer_idx][weight_idx].is_meta:
+                    self._storage[layer_idx][weight_idx] = weights
+                    self.register_parameter(f'l{layer_idx}w{weight_idx}', weights)
 
-        for layer_index, layer_weights in enumerate(self._storage):
-            for weight_index, weights in enumerate(layer_weights):
-                self.register_parameter(f'l{layer_index}w{weight_index}', weights)
+    def set_parameters(
+            self,
+            layer_id: int,
+            parameters: List[nn.Parameter],
+    ):
+        """
+        Updates the weight parameters for the specified layer.
+        This method can be called either immediately after registering a layer
+        (when placeholder parameters exist) or after all layers have been registered.
+
+        :param layer_id: The index of the layer to update.
+        :param parameters: A list of new nn.Parameter objects for that layer.
+        """
+        layer_parameters = self._storage[layer_id]
+        if len(layer_parameters) != len(parameters):
+            raise ValueError(
+                f"Parameter count mismatch for layer {layer_id}: "
+                f"expected {len(layer_parameters)}, got {len(parameters)}"
+            )
+
+        for idx, param in enumerate(parameters):
+            if param.shape != layer_parameters[idx].shape:
+                raise ValueError(
+                    f"Shape mismatch for parameter at index {idx} in layer {layer_id}: "
+                    f"expected {layer_parameters[idx].shape}, got {param.shape}"
+                )
+
+            layer_parameters[idx] = param
+            self.register_parameter(f'l{layer_id}w{idx}', param)
 
     def forward(
             self,
             layer_index: int,
-            config: PseudoLayerConfig,
-    ) -> List[torch.Tensor]:
+    ) -> List[nn.Parameter]:
+        """
+        Retrieves the weight parameters for the given layer, optionally based on a configuration.
+
+        :param layer_index: The index of the layer for which weights are requested.
+        :return: A list of nn.Parameter objects for the specified layer.
+        """
         return self._storage[layer_index]
+
+    @property
+    def get_argument_parsing_strategy(self) -> ArgumentParsingStrategy:
+        return self._argument_parsing_strategy

@@ -1,7 +1,7 @@
 from typing import List, Optional
 import torch
 from gm.layers.pseudo_layers.pseudo_layer import PseudoLayer
-from gm.layers.weights_storage import WeightsStorage
+from gm.layers.weights_storage.weights_storage import WeightsStorage
 
 
 class PseudoGroupedQueryAttention(PseudoLayer):

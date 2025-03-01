@@ -3,3 +3,6 @@ torchvision
 numpy
 
 transformers~=4.48.3
+torchinfo~=1.8.0
+bitsandbytes~=0.45.3
+datasets~=3.3.2
