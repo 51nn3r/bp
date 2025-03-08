@@ -5,6 +5,7 @@ from time import time
 import torch
 from datasets import load_dataset, Dataset
 from torch import nn
+from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedTokenizerBase
 from transformers.pytorch_utils import Conv1D
@@ -22,13 +23,13 @@ from gm.settings import CPU_DEVICE, CUDA_DEVICE
 
 device = torch.device(CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE)
 # device = torch.device(CPU_DEVICE)
-print(device)
 
 model_name = "EleutherAI/gpt-neo-2.7B"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 
 tokenizer.pad_token = tokenizer.eos_token
+PAD_TOKEN_ID = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
 
 # Новый специальный токен - разделитель вопроса и ответа:
 SEP_TOKEN = "<|QA_SEP|>"
@@ -39,8 +40,6 @@ special_tokens_dict = {"additional_special_tokens": [SEP_TOKEN]}
 num_added_tokens = tokenizer.add_special_tokens(special_tokens_dict)
 model.resize_token_embeddings(len(tokenizer))
 SEP_TOKEN_ID = tokenizer.convert_tokens_to_ids(SEP_TOKEN)
-print(SEP_TOKEN_ID)
-
 
 def create_tokenized_data(dialog_messages, tokenizer, sep_token, max_length=512):
     """
@@ -114,7 +113,7 @@ def create_training_dataset(
             text,
             max_length=max_length,
             truncation=True,
-            padding=True,
+            padding='max_length',
         )
 
         input_ids_batch = tokenized["input_ids"]
@@ -137,6 +136,7 @@ def create_training_dataset(
             labels_batch.append(labels)
 
         tokenized["labels"] = labels_batch
+
         return tokenized
 
     ds = dataset.map(
@@ -169,7 +169,6 @@ test_dialog_data = [
 ]
 
 dataset = load_dataset('Vikhrmodels/GrandMaster-PRO-MAX')
-print(dataset)
 train_data = create_training_dataset(dataset['train'], tokenizer, SEP_TOKEN, max_length=512, mask_prompt=False)
 test_data = create_training_dataset(dataset['test'], tokenizer, SEP_TOKEN, max_length=512, mask_prompt=False)
 print("Получили", len(train_data), "примеров для обучения")
@@ -194,8 +193,8 @@ pseudo_model = PseudoModule.create_patched_pseudo_model(
 weights_storage.build_storage()
 pseudo_model.fit(
     train_dataset=train_data,
-    batch_size=1,
+    batch_size=2,
     lr=1e-4,
-    num_epochs=3,
+    num_epochs=10,
     device=device,
 )

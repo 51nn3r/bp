@@ -46,13 +46,11 @@ class PseudoModule(nn.Module):
                     weights_storage=self._weights_storage,
                     module=child,
                 )
-                # print(f'{name}) {module} -> {pseudo_module}')
                 setattr(module, name, pseudo_module)
             else:
                 self._patch_module(child, mapping, target_modules)
 
     def _compute_loss(self, logits, labels, vocab_size, ignore_index=-100):
-        print(logits)
         if isinstance(logits, (tuple, list)):
             logits = logits[0]
 
@@ -147,30 +145,28 @@ class PseudoModule(nn.Module):
                 loss.backward(retain_graph=True)
                 total_params_count = 0
                 for param in self._module.parameters():
-                    # print(param.shape, param.grad)
                     if param.grad is not None:
                         total_params_count += param.grad.numel()
 
                     pass
 
-                # print(f'> {total_params_count}')
-
-                # input('> ')
                 optimizer.step()
 
                 running_loss += loss.item()
-                if step % 1 == 0:
+                if step % 500 == 0:
                     current_time = time()
                     print(f"Epoch {epoch + 1}, Step {step} / {batches_count}, Loss: {running_loss / (step + 1):.4f}, "
                           f"Time: {current_time - start_step_time}")
 
                     start_step_time = current_time
 
-                if step % 10 == 0:
+                if step % 1000 == 0:
                     self._weights_storage.update_weights_and_reinit_lora()
                     pass
 
             print(f"Epoch {epoch + 1} finished, avg loss: {running_loss / len(train_loader):.4f}")
+            self.save_model(f'neo{epoch}.pth')
+            # self.save_model(f'/content/drive/MyDrive/Colab\ Notebooks/bp/models/neo{epoch}.pth')
 
     def save_model(
             self,
