@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Type, Dict
+from typing import Type, Dict, Mapping, Any, List
+from time import time
 
 import torch
 from torch import nn
@@ -9,7 +10,6 @@ from torch.nn.modules.module import T
 from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim import SGD, Adam
-from bitsandbytes.optim import Adam8bit
 
 from gm.layers.weights_storage.weights_storage import WeightsStorage
 from gm.layers.pseudo_layers.pseudo_layer import PseudoLayer
@@ -37,17 +37,19 @@ class PseudoModule(nn.Module):
             self,
             module: nn.Module,
             mapping: Dict[Type[nn.Module], Type[PseudoLayer]],
+            target_modules: List[str],
     ):
         for name, child in module.named_children():
-            if child.__class__ in mapping:
+            if child.__class__ in mapping and name in target_modules:
                 pseudo_cls = mapping[child.__class__]
                 pseudo_module = pseudo_cls.from_module(
                     weights_storage=self._weights_storage,
                     module=child,
                 )
+                # print(f'{name}) {module} -> {pseudo_module}')
                 setattr(module, name, pseudo_module)
             else:
-                self._patch_module(child, mapping)
+                self._patch_module(child, mapping, target_modules)
 
     def _compute_loss(self, logits, labels, vocab_size, ignore_index=-100):
         print(logits)
@@ -70,10 +72,11 @@ class PseudoModule(nn.Module):
     def create_patched_pseudo_model(
             weights_storage: WeightsStorage,
             module: nn.Module,
-            mapping: Dict[Type[nn.Module], Type[PseudoLayer]]
+            mapping: Dict[Type[nn.Module], Type[PseudoLayer]],
+            target_modules: List[str],
     ) -> PseudoModule:
         pseudo_model = PseudoModule(weights_storage, module)
-        pseudo_model._patch_module(module, mapping)
+        pseudo_model._patch_module(module, mapping, target_modules)
 
         return pseudo_model
 
@@ -89,7 +92,7 @@ class PseudoModule(nn.Module):
 
         return self
 
-    def fit(self, train_dataset, vocab_size, num_epochs=3, batch_size=4, lr=1e-4, device=None):
+    def fit(self, train_dataset, num_epochs=3, batch_size=4, lr=1e-4, device=None):
         if device is None:
             device = torch.device(CPU_DEVICE)
 
@@ -115,6 +118,8 @@ class PseudoModule(nn.Module):
         # Используем 8-бит Adam:
         optimizer = Adam([p for p in self._module.parameters() if p.requires_grad], lr=lr)
 
+        start_step_time = time()
+        batches_count = len(train_loader)
         for epoch in range(num_epochs):
             running_loss = 0.0
             for step, batch in enumerate(train_loader):
@@ -139,7 +144,7 @@ class PseudoModule(nn.Module):
                     # loss = self._compute_loss(logits, labels, vocab_size)
                     loss = outputs.loss
 
-                loss.backward()
+                loss.backward(retain_graph=True)
                 total_params_count = 0
                 for param in self._module.parameters():
                     # print(param.shape, param.grad)
@@ -148,13 +153,36 @@ class PseudoModule(nn.Module):
 
                     pass
 
-                print(f'> {total_params_count}')
+                # print(f'> {total_params_count}')
 
                 # input('> ')
                 optimizer.step()
 
                 running_loss += loss.item()
                 if step % 1 == 0:
-                    print(f"Epoch {epoch + 1}, Step {step}, Loss: {running_loss / (step + 1):.4f}")
+                    current_time = time()
+                    print(f"Epoch {epoch + 1}, Step {step} / {batches_count}, Loss: {running_loss / (step + 1):.4f}, "
+                          f"Time: {current_time - start_step_time}")
+
+                    start_step_time = current_time
+
+                if step % 10 == 0:
+                    self._weights_storage.update_weights_and_reinit_lora()
+                    pass
 
             print(f"Epoch {epoch + 1} finished, avg loss: {running_loss / len(train_loader):.4f}")
+
+    def save_model(
+            self,
+            path='model.pth'
+    ):
+        torch.save(self._module.state_dict(), path)
+
+    def load_model(
+            self,
+            path='model.pth'
+    ):
+        self._module.load_state_dict(torch.load(path))
+
+    def reset_parameters(self):
+        self._weights_storage.reset_parameters()

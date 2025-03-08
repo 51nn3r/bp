@@ -20,7 +20,6 @@ class LoRA(BaseLoRA, ABC):
         n_dims = len(dims)
         self._matrices = nn.ParameterList()
 
-
         if n_dims == 1:
             first_core = nn.Parameter(torch.empty(dims[0], rank))
             init_function(first_core)
@@ -49,3 +48,10 @@ class LoRA(BaseLoRA, ABC):
             delta = torch.tensordot(delta, core, dims=([-1], [0]))
 
         return delta
+
+    def reset_matrices(self):
+        for matrix in self._matrices:
+            if len(matrix.shape) == 1:
+                nn.init.normal_(matrix)
+            else:
+                self._init_function(matrix)

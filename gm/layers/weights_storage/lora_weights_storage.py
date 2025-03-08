@@ -24,7 +24,8 @@ class LoRAWeightsStorage(WeightsStorage):
     def __init__(
             self,
             argument_parsing_strategy: ArgumentParsingStrategy,
-            lora_strategy: BaseLoRAInitStrategy,
+            device: torch._C.device | None = None,
+            lora_strategy: BaseLoRAInitStrategy | None = None,
             **kwargs,
     ):
         """
@@ -33,7 +34,10 @@ class LoRAWeightsStorage(WeightsStorage):
         :param lora_strategy: The strategy to use for distributing LoRA modules among layers.
         :param kwargs: Additional keyword arguments passed to the parent WeightsStorage.
         """
-        super().__init__(argument_parsing_strategy, **kwargs)
+        if lora_strategy is None:
+            raise "Missing lora strategy"
+
+        super().__init__(argument_parsing_strategy, device, **kwargs)
 
         self._layers = []
         self._storage = []
@@ -54,7 +58,13 @@ class LoRAWeightsStorage(WeightsStorage):
         updates self._storage (i.e. replaces meta tensor placeholders with real parameters) and registers them.
         """
         # Distribute and initialize LoRA modules for all layers.
-        self._lora_modules = self._lora_strategy.distribute_lora_modules(self._layers, rank)
+        lora_modules = self._lora_strategy.distribute_lora_modules(self._layers, rank)
+        for lora_module_layer in lora_modules:
+            for lora_module in lora_module_layer:
+                lora_module.to(self._device)
+
+        self._lora_modules = lora_modules
+
         for layer_idx, layer_modules in enumerate(self._lora_modules):
             for module_idx, module in enumerate(layer_modules):
                 self.add_module(f'lora_{layer_idx}_{module_idx}', module)
@@ -66,7 +76,6 @@ class LoRAWeightsStorage(WeightsStorage):
 
     def update_weights_and_reinit_lora(
             self,
-            rank: int = 1,
     ):
         """
         Updates the main weights and reinitializes the LoRA modules.
@@ -85,10 +94,14 @@ class LoRAWeightsStorage(WeightsStorage):
                 if lora_module is None:
                     continue
 
-                self._storage[layer_idx][parameters_idx] += lora_module.compute_lora_delta()
+                with torch.no_grad():
+                    self._storage[layer_idx][parameters_idx] += lora_module.compute_lora_delta()
+                    pass
 
-        # Reinitialize the LoRA modules based on the current state of the layers.
-        self._lora_modules = self._lora_strategy.distribute_lora_modules(self._layers, rank)
+        for layer_modules in self._lora_modules:
+            for lora_module in layer_modules:
+                if lora_module is not None:
+                    lora_module.reset_matrices()
 
     def forward(
             self,
@@ -106,7 +119,8 @@ class LoRAWeightsStorage(WeightsStorage):
         """
         return [
             weights + self._lora_modules[layer_index][weights_idx].compute_lora_delta()
-            if self._lora_modules[layer_index][weights_idx] is not None else weights
+            if self._lora_modules[layer_index][weights_idx] is not None and
+               self._lora_modules[layer_index][weights_idx].enabled else weights
             for weights_idx, weights in enumerate(self._storage[layer_index])
         ]
 

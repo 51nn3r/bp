@@ -12,6 +12,9 @@ from gm.lora.init_strategy.lora_full_init_strategy import LoRAFullInitStrategy
 from gm.lora.lora import LoRA
 from gm.pseudo_model import PseudoModule
 
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+
 
 class TestModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
@@ -112,6 +115,7 @@ if __name__ == '__main__':
 
     pseudo_model.fit(
         train_dataset=train_ds,
+        vocab_size=128008,
         batch_size=4,
         lr=1e-4,
         num_epochs=3,

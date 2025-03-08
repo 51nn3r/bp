@@ -1,67 +1,49 @@
-import pathlib
 from time import time
 
 import torch
-from datasets import load_dataset
-from torch import nn
 from torch.utils.data import DataLoader
-from transformers import AutoTokenizer, AutoModelForCausalLM, PreTrainedTokenizerBase
-from transformers.pytorch_utils import Conv1D
-
-from gm.layers.pseudo_layers.argument_parsing_strategy.argument_parsing_strategy import ArgumentParsingStrategy
-from gm.layers.pseudo_layers.pseudo_linear import PseudoLinear
-from gm.layers.pseudo_layers.transformers.pseudo_conv1d import PseudoConv1D
-from gm.layers.weights_storage.weights_storage import WeightsStorage
-from gm.layers.weights_storage.lora_weights_storage import LoRAWeightsStorage
-from gm.lora.init_strategy.lora_full_init_strategy import LoRAFullInitStrategy
-from gm.lora.lora import LoRA
-from gm.pseudo_model import PseudoModule
+from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, PreTrainedTokenizerBase
+from datasets import load_dataset
+from peft import get_peft_model, LoraConfig, TaskType
 
 from gm.settings import CPU_DEVICE, CUDA_DEVICE
 
 device = torch.device(CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE)
-print(device)
 # device = torch.device(CPU_DEVICE)
+print(device)
 
+# Задаем имя модели и загружаем токенизатор и модель
 # model_name = "meta-llama/Llama-3.2-1B"
 model_name = "openai-community/gpt2-medium"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
+model.to(device)
 
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.add_special_tokens({"additional_special_tokens": ["<|reserved_special_token_0|>"]})
 # если модель уже инициализирована, нужно расширить эмбеддинги:
 model.resize_token_embeddings(len(tokenizer))
 split_token_id = tokenizer.convert_tokens_to_ids("<|reserved_special_token_0|>")
-
-''''''
-init_strategy = LoRAFullInitStrategy(LoRA)
-weights_storage = LoRAWeightsStorage(ArgumentParsingStrategy({}), device, init_strategy)
-
-pseudo_model = PseudoModule.create_patched_pseudo_model(
-    weights_storage=weights_storage,
-    module=model,
-    mapping={
-        nn.Linear: PseudoLinear,
-        Conv1D: PseudoConv1D,
-    },
-    target_modules=[
-        'k_proj',
-        'v_proj',
-        'q_proj',
-    ],
-)
-weights_storage.build_storage(10)
-
-model.to(device)
-
-path = pathlib.Path().resolve().parent.parent.joinpath('gm/datasets')
-# dataset = load_dataset(str(path))
-# dataset = load_dataset("openai/gsm8k", "main")
-dataset = load_dataset("Vikhrmodels/GrandMaster-PRO-MAX")  # russian
-# dataset = load_dataset("rubq", "2.0")
-exit(0)
 SPLIT_TOKEN = ['<|reserved_special_token_0|>', split_token_id]
+
+# Настраиваем LoRA с помощью PEFT
+# Важно: параметр target_modules подбирается под архитектуру модели
+peft_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,  # для генеративных моделей
+    inference_mode=False,  # если планируете дообучение
+    r=8,  # размерность LoRA (rank)
+    lora_alpha=32,  # масштабирующий коэффициент
+    lora_dropout=0.1,  # dropout в LoRA слоях
+    target_modules=["c_attn"]  # для GPT-2 обычно целевыми являются слои внимания ("c_attn")
+)
+
+# Применяем LoRA к модели
+model = get_peft_model(model, peft_config)
+print("Параметры модели с PEFT:")
+model.print_trainable_parameters()
+
+# Загружаем датасет (например, wikitext-2)
+dataset = load_dataset("openai/gsm8k", "main")
 
 
 def build_prompt(
@@ -161,29 +143,35 @@ datasets = train_dataloader.dataset
 train_ds = prepare_dataset(datasets["train"], tokenizer, max_length=256)
 test_ds = prepare_dataset(datasets["test"], tokenizer, max_length=256)
 
-print(train_ds.data)
-
-'''
-import code
-
-variables = globals().copy()
-variables.update(locals())
-shell = code.InteractiveConsole(variables)
-shell.interact()
-'''
-''''''
-pseudo_model.fit(
-    train_dataset=train_ds,
-    batch_size=4,
-    lr=1e-4,
-    num_epochs=3,
-    device=device,
+# Задаем параметры обучения
+training_args = TrainingArguments(
+    output_dir="./peft_finetuned_model",  # директория для сохранения чекпоинтов
+    per_device_train_batch_size=2,  # размер батча (подберите под вашу GPU)
+    num_train_epochs=1,  # количество эпох (для теста можно поставить 1)
+    logging_steps=10,
+    save_steps=50,
+    save_total_limit=2,
+    evaluation_strategy="no"
 )
 
-pseudo_model.save_model()
+# Создаем Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_ds,
+    eval_dataset=test_ds,
+    tokenizer=tokenizer,
+)
 
-# start_inp = "What is the capital of America?<|reserved_special_token_0|>"
-start_inp = "What do you think about mushrooms?<|reserved_special_token_0|>"
+# Запускаем обучение
+# trainer.train()
+
+# Сохраняем дообученную модель (с параметрами PEFT)
+model.save_pretrained("./peft_finetuned_model")
+print("Финальная модель сохранена в './peft_finetuned_model'")
+
+model.eval()
+start_inp = "What is the capital of America?"
 inputs = tokenizer(start_inp, return_tensors="pt")
 inputs = {k: v.to(device) for k, v in inputs.items()}
 start = time()

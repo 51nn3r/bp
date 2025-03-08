@@ -36,3 +36,7 @@ class BaseLoRA(nn.Module, ABC):
 
     def disable(self):
         self._enabled = False
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled

@@ -7,7 +7,7 @@ from torch.nn import init
 from gm.layers.pseudo_layers.argument_parsing_strategy.argument_parsing_strategy import ArgumentParsingStrategy
 from gm.layers.shaped_layer import ShapedLayer
 
-from gm.settings import META_DEVICE
+from gm.settings import META_DEVICE, CPU_DEVICE
 
 
 class WeightsStorage(nn.Module):
@@ -21,11 +21,13 @@ class WeightsStorage(nn.Module):
     def __init__(
             self,
             argument_parsing_strategy: ArgumentParsingStrategy,
+            device: torch._C.device | None = None,
             **kwargs,
     ):
         super().__init__(**kwargs)
 
         self._argument_parsing_strategy = argument_parsing_strategy
+        self._device = device if device is not None else torch.device(CPU_DEVICE)
         self._layers = []
         self._storage = []
 
@@ -106,6 +108,12 @@ class WeightsStorage(nn.Module):
 
             layer_parameters[idx] = param
             self.register_parameter(f'l{layer_id}w{idx}', param)
+
+    def reset_parameters(self):
+        for layer in self._storage:
+            for param in layer:
+                if len(param.shape) > 1:
+                    nn.init.xavier_uniform_(param)
 
     def forward(
             self,
