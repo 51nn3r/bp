@@ -83,3 +83,11 @@ class PseudoLinear(PseudoLayer):
             bias = None
 
         return F.linear(inputs, kernel, bias)
+
+    @property
+    def weight(self):
+        return self._weights_storage.forward(self._storage_index)[0]
+
+    @property
+    def bias(self):
+        return self._weights_storage.forward(self._storage_index)[1]

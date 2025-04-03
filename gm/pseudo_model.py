@@ -9,7 +9,8 @@ import torch.nn.functional as F
 from torch.nn.modules.module import T
 from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler, autocast
-from torch.optim import SGD, Adam
+from torch import optim
+from bitsandbytes.optim import Adam8bit
 
 from gm.layers.weights_storage.weights_storage import WeightsStorage
 from gm.layers.pseudo_layers.pseudo_layer import PseudoLayer
@@ -37,10 +38,13 @@ class PseudoModule(nn.Module):
             self,
             module: nn.Module,
             mapping: Dict[Type[nn.Module], Type[PseudoLayer]],
-            target_modules: List[str],
+            target_modules: List[str] | None = None,
     ):
         for name, child in module.named_children():
-            if child.__class__ in mapping and name in target_modules:
+            if child.__class__ in mapping and (
+                    target_modules is None
+                    or any(t in name for t in target_modules)
+            ):
                 pseudo_cls = mapping[child.__class__]
                 pseudo_module = pseudo_cls.from_module(
                     weights_storage=self._weights_storage,
@@ -50,28 +54,12 @@ class PseudoModule(nn.Module):
             else:
                 self._patch_module(child, mapping, target_modules)
 
-    def _compute_loss(self, logits, labels, vocab_size, ignore_index=-100):
-        if isinstance(logits, (tuple, list)):
-            logits = logits[0]
-
-        # Сдвигаем логиты и метки:
-        shift_logits = logits[:, :-1, :].contiguous()  # убираем последний токен
-        shift_labels = labels[:, 1:].contiguous()  # убираем первый токен
-
-        # Переводим в форму [N, vocab_size] и [N]:
-        loss = F.cross_entropy(
-            shift_logits.view(-1, vocab_size),
-            shift_labels.view(-1),
-            ignore_index=ignore_index
-        )
-        return loss
-
     @staticmethod
     def create_patched_pseudo_model(
             weights_storage: WeightsStorage,
             module: nn.Module,
             mapping: Dict[Type[nn.Module], Type[PseudoLayer]],
-            target_modules: List[str],
+            target_modules: List[str] | None = None,
     ) -> PseudoModule:
         pseudo_model = PseudoModule(weights_storage, module)
         pseudo_model._patch_module(module, mapping, target_modules)
@@ -90,38 +78,39 @@ class PseudoModule(nn.Module):
 
         return self
 
-    def fit(self, train_dataset, num_epochs=3, batch_size=4, lr=1e-4, device=None):
+    def fit(self, train_dataset, test_dataset=None, num_epochs=3, batch_size=4, lr=1e-4, device=None):
         if device is None:
             device = torch.device(CPU_DEVICE)
 
-        # Создаем DataLoader с кастомным collate_fn для паддинга (предполагаем, что данные уже в виде словаря с "inputs" и "labels")
         def collate_fn(examples):
-            # Пример: если ваши данные уже содержат тензоры, можно использовать torch.stack
-            # или, если это списки, вызвать tokenizer.pad(...) если он доступен
             return {
                 "input_ids": torch.stack([torch.tensor(e["input_ids"]) for e in examples]),
-                "labels": torch.stack([torch.tensor(e["labels"]) for e in examples])
+                "attention_mask": torch.stack([torch.tensor(e["attention_mask"]) for e in examples]),
+                "labels": torch.stack([torch.tensor(e["labels"]) for e in examples]),
             }
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
+        if test_dataset is not None:
+            test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
         self._module.to(device)
         for param in self.parameters():
             param.requires_grad = False
             pass
 
-        # param.requires_grad = True
+        for param in self._module.classifier.parameters():
+            param.requires_grad = True
+
         self.train()
 
-        # Используем 8-бит Adam:
-        optimizer = Adam([p for p in self._module.parameters() if p.requires_grad], lr=lr)
+        # optimizer = Adam8bit([p for p in self._module.parameters() if p.requires_grad], lr=lr)
+        optimizer = optim.AdamW([p for p in self._module.parameters() if p.requires_grad], lr=lr)
 
         start_step_time = time()
         batches_count = len(train_loader)
         for epoch in range(num_epochs):
             running_loss = 0.0
             for step, batch in enumerate(train_loader):
-                # Предполагаем, что batch имеет ключи "inputs" и "labels"
                 inputs = batch["input_ids"].to(device)
                 labels = batch["labels"].to(device)
                 if 'attention_mask' in batch:
@@ -131,15 +120,13 @@ class PseudoModule(nn.Module):
 
                 optimizer.zero_grad()
 
-                # Используем autocast для BF16 (если ваша платформа поддерживает BF16)
                 with autocast(dtype=torch.bfloat16):
                     if attention_mask is not None:
                         outputs = self._module(inputs, attention_mask=attention_mask,
-                                               labels=labels)  # forward возвращает логиты
+                                               labels=labels)
                     else:
                         outputs = self._module(inputs, labels=labels)
 
-                    # loss = self._compute_loss(logits, labels, vocab_size)
                     loss = outputs.loss
 
                 loss.backward(retain_graph=True)
@@ -153,20 +140,80 @@ class PseudoModule(nn.Module):
                 optimizer.step()
 
                 running_loss += loss.item()
-                if step % 500 == 0:
+                if step % 50 == 0:
                     current_time = time()
+                    '''
                     print(f"Epoch {epoch + 1}, Step {step} / {batches_count}, Loss: {running_loss / (step + 1):.4f}, "
+                          f"Time: {current_time - start_step_time}")
+                    '''
+
+                    print(f"Epoch {epoch + 1}, Step {step} / {batches_count}, Loss: {running_loss / 50}, "
                           f"Time: {current_time - start_step_time}")
 
                     start_step_time = current_time
+                    running_loss = 0
 
-                if step % 1000 == 0:
-                    self._weights_storage.update_weights_and_reinit_lora()
+                if step % 500 == 0:
+                    # self._weights_storage.update_weights_and_reinit_lora()
                     pass
 
+                if step % 250 == 0:
+                    if test_dataset is not None:
+                        self.eval()
+                        self._weights_storage.enable_lora()
+                        test_loss = 0.0
+                        correct = 0
+                        total = 0
+                        test_batches = len(test_loader)
+                        with torch.no_grad():
+                            for t_step, t_batch in enumerate(test_loader):
+                                t_inputs = t_batch["input_ids"].to(device)
+                                t_labels = t_batch["labels"].to(device)
+                                t_attention_mask = t_batch.get("attention_mask", None)
+                                if t_attention_mask is not None:
+                                    t_attention_mask = t_attention_mask.to(device)
+
+                                with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+                                    t_outputs = self._module(t_inputs, attention_mask=t_attention_mask, labels=t_labels)
+                                    t_loss = t_outputs.loss
+                                    logits = t_outputs.logits
+
+                                test_loss += t_loss.item()
+
+                                predictions = torch.argmax(logits, dim=-1)
+                                correct += (predictions == t_labels).sum().item()
+                                total += t_labels.numel()
+
+                        avg_test_loss = test_loss / test_batches
+                        accuracy = correct / total if total > 0 else 0.0
+                        print(
+                            f"Epoch {epoch + 1} evaluation: avg test loss: {avg_test_loss:.4f}, accuracy: {accuracy:.4f}")
+
+                        self.train()
+
             print(f"Epoch {epoch + 1} finished, avg loss: {running_loss / len(train_loader):.4f}")
-            self.save_model(f'neo{epoch}.pth')
-            # self.save_model(f'/content/drive/MyDrive/Colab\ Notebooks/bp/models/neo{epoch}.pth')
+            self.save_model(f'neo{epoch}_{int(time())}.pth')
+
+            if test_dataset is not None:
+                self.eval()
+                test_loss = 0.0
+                test_batches = len(test_loader)
+                with torch.no_grad():
+                    for t_step, t_batch in enumerate(test_loader):
+                        t_inputs = t_batch["input_ids"].to(device)
+                        t_labels = t_batch["labels"].to(device)
+                        t_attention_mask = t_batch.get("attention_mask", None)
+                        if t_attention_mask is not None:
+                            t_attention_mask = t_attention_mask.to(device)
+
+                        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+                            t_outputs = self._module(t_inputs, attention_mask=t_attention_mask, labels=t_labels)
+                            t_loss = t_outputs.loss
+                        test_loss += t_loss.item()
+
+                avg_test_loss = test_loss / test_batches
+                print(f"Epoch {epoch + 1} evaluation: avg test loss: {avg_test_loss:.4f}")
+                self.train()
 
     def save_model(
             self,
@@ -176,9 +223,10 @@ class PseudoModule(nn.Module):
 
     def load_model(
             self,
-            path='model.pth'
+            path='model.pth',
+            device_name=CPU_DEVICE,  # TODO: change device_name -> self._device
     ):
-        self._module.load_state_dict(torch.load(path))
+        self._module.load_state_dict(torch.load(path, map_location=torch.device(device_name)))
 
     def reset_parameters(self):
         self._weights_storage.reset_parameters()

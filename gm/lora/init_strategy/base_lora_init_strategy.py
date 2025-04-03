@@ -11,6 +11,7 @@ class BaseLoRAInitStrategy(ABC):
             self,
             layers: List[ShapedLayer],
             rank: int = 1,
+            **kwargs,
     ) -> List[List[BaseLoRA | None]]:
         """Spreads LoRA modules across model layers"""
         pass

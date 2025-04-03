@@ -1,3 +1,4 @@
+import unittest
 import torch
 from torch import nn
 from datasets import Dataset, DatasetDict
@@ -95,27 +96,14 @@ if __name__ == '__main__':
         for lora in layer_lora:
             print(lora._shape)
 
-    print('-' * 100)
-    pseudo_weights = weights_storage.forward(0)
+    # model.gradient_checkpointing_enable()
 
-    patched_output = model(dummy_input, False)
-    print("Patched output:", patched_output)
-
-    print('=' * 100)
-    print('pseudo weights', pseudo_weights)
-
-    print('=' * 200)
-
-    dummy_input_ids = torch.randn(1000, 10)
-    dummy_labels = torch.randn(1000, 5)
-    train_ds = Dataset.from_dict({
-        'input_ids': dummy_input_ids,
-        'labels': dummy_labels,
-    })
+    inputs = torch.randn(10000, 10)
+    labels = torch.randn(10000, 5)
+    train_ds = Dataset.from_dict({'input_ids': inputs, 'labels': labels})
 
     pseudo_model.fit(
         train_dataset=train_ds,
-        vocab_size=128008,
         batch_size=4,
         lr=1e-4,
         num_epochs=3,

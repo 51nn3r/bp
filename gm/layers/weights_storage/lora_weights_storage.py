@@ -3,9 +3,10 @@ from typing import List, Optional
 import torch
 from torch import nn
 
-from gm.layers.pseudo_layers.argument_parsing_strategy.argument_parsing_strategy import ArgumentParsingStrategy
 from gm.layers.shaped_layer import ShapedLayer
+from gm.layers.weights_storage.configs.lora_weights_storage_config import LoraWeightsStorageConfig
 from gm.layers.weights_storage.weights_storage import WeightsStorage
+from gm.lora.enable_strategy.base_lora_enable_strategy import BaseLoraEnableStrategy
 from gm.lora.init_strategy.base_lora_init_strategy import BaseLoRAInitStrategy
 from gm.lora.base_lora import BaseLoRA
 
@@ -19,34 +20,39 @@ class LoRAWeightsStorage(WeightsStorage):
     # If LoRA is not applied for a given weight, the element is None.
     _lora_modules: List[List[Optional[BaseLoRA]]]
     # LoRA initialization strategy used to distribute LoRA modules across layers.
-    _lora_strategy: BaseLoRAInitStrategy
+    _lora_init_strategy: BaseLoRAInitStrategy
+    # LaRA enable strategy. For example while using XGBLoRA we randomly deside which module should be enabled
+    _lora_enable_strategy: BaseLoraEnableStrategy | None
+    # Config
+    _config: LoraWeightsStorageConfig
 
     def __init__(
             self,
-            argument_parsing_strategy: ArgumentParsingStrategy,
-            device: torch._C.device | None = None,
-            lora_strategy: BaseLoRAInitStrategy | None = None,
+            config: LoraWeightsStorageConfig,
             **kwargs,
     ):
         """
         Initialize the LoRAWeightsStorage.
 
-        :param lora_strategy: The strategy to use for distributing LoRA modules among layers.
+        :param lora_init_strategy: The strategy to use for distributing LoRA modules among layers.
         :param kwargs: Additional keyword arguments passed to the parent WeightsStorage.
         """
-        if lora_strategy is None:
+        if config.lora_init_strategy is None:
             raise "Missing lora strategy"
 
-        super().__init__(argument_parsing_strategy, device, **kwargs)
+        super().__init__(config, **kwargs, )
 
         self._layers = []
         self._storage = []
         self._lora_modules = []
-        self._lora_strategy = lora_strategy
+        self._lora_init_strategy = config.lora_init_strategy
 
     def build_storage(
             self,
             rank: int = 1,
+            alpha: float = 1.,
+            dtype: torch.dtype = torch.float16,
+            lora_dropout: float = 0.0,
     ):
         """
         Initializes the LoRA modules and the actual weight parameters for all registered layers.
@@ -58,10 +64,32 @@ class LoRAWeightsStorage(WeightsStorage):
         updates self._storage (i.e. replaces meta tensor placeholders with real parameters) and registers them.
         """
         # Distribute and initialize LoRA modules for all layers.
-        lora_modules = self._lora_strategy.distribute_lora_modules(self._layers, rank)
-        for lora_module_layer in lora_modules:
-            for lora_module in lora_module_layer:
+        lora_modules = self._lora_init_strategy.distribute_lora_modules(
+            layers=self._layers,
+            rank=rank,
+            alpha=alpha,
+            dtype=dtype,
+            lora_dropout=lora_dropout,
+        )
+
+        self._lora_enable_strategy = self._config.lora_enable_strategy_cls(
+            adapters_count=len(lora_modules),
+            enabled_adapters_proportion=self._config.enabled_adapters_proportion
+        )
+
+        for layer_modules, should_be_activated in zip(
+                self._lora_modules,
+                self._lora_enable_strategy.get_activation_mask()
+        ):
+            for lora_module in layer_modules:
+                if lora_module is None:
+                    continue
+
                 lora_module.to(self._device)
+                if should_be_activated:
+                    lora_module.enable()
+                else:
+                    lora_module.disable()
 
         self._lora_modules = lora_modules
 
@@ -74,21 +102,17 @@ class LoRAWeightsStorage(WeightsStorage):
         # replace the meta tensor placeholders in self._storage, and register each parameter.
         super().build_storage()
 
-    def update_weights_and_reinit_lora(
+        self.reset_lora()
+
+    def set_enable_strategy(
+            self,
+            enable_strategy: BaseLoraEnableStrategy,
+    ):
+        self._lora_enable_strategy = enable_strategy
+
+    def apply_weights(
             self,
     ):
-        """
-        Updates the main weights and reinitializes the LoRA modules.
-
-        This method is useful when the main weights have been updated (for example, during fine-tuning)
-        and the corresponding LoRA modules should be reinitialized (or redistributed) accordingly.
-
-        The process is as follows:
-          1. Update or reinitialize the main weights.
-             (In this implementation, we assume that the main weights in _storage are already updated.)
-          2. Re-distribute and reinitialize the LoRA modules using the current LoRA strategy.
-        """
-        # Update main weights
         for layer_idx, lora_module_group in enumerate(self._lora_modules):
             for parameters_idx, lora_module in enumerate(lora_module_group):
                 if lora_module is None:
@@ -98,10 +122,19 @@ class LoRAWeightsStorage(WeightsStorage):
                     self._storage[layer_idx][parameters_idx] += lora_module.compute_lora_delta()
                     pass
 
-        for layer_modules in self._lora_modules:
+    def reset_lora(self):
+        for layer_modules, should_be_activated in zip(
+                self._lora_modules,
+                self._lora_enable_strategy.get_activation_mask()
+        ):
             for lora_module in layer_modules:
                 if lora_module is not None:
-                    lora_module.reset_matrices()
+                    if should_be_activated:
+                        lora_module.reset_matrices()
+                        lora_module.enable()
+                        lora_module.enable_grad()
+                    else:
+                        lora_module.disable()
 
     def forward(
             self,
@@ -124,16 +157,68 @@ class LoRAWeightsStorage(WeightsStorage):
             for weights_idx, weights in enumerate(self._storage[layer_index])
         ]
 
-    def eval(self):
+    def disable_lora(self):
         for layer_modules in self._lora_modules:
             for module in layer_modules:
+                if module is None:
+                    continue
+
                 module.disable()
 
-    def train(self, mode: bool = True):
-        for layer_weights in self._storage:
-            for weights in layer_weights:
-                weights.requires_grad = False
-
+    def enable_lora(self):
         for layer_modules in self._lora_modules:
             for module in layer_modules:
+                if module is None:
+                    continue
+
                 module.enable()
+
+    def eval(self):
+        super().eval()
+        for layer_modules in self._lora_modules:
+            for module in layer_modules:
+                if module is None:
+                    continue
+
+                module.eval()
+
+    def train(self, mode: bool = True):
+        super().train()
+        for layer_modules in self._lora_modules:
+            for module in layer_modules:
+                if module is None:
+                    continue
+
+                module.train()
+
+    def disable_grad(self):
+        super().eval()
+        for layer_modules in self._lora_modules:
+            for module in layer_modules:
+                if module is None:
+                    continue
+
+                module.disable_grad()
+
+    def enable_grad(self):
+        super().train()
+        for layer_modules in self._lora_modules:
+            for module in layer_modules:
+                if module is None:
+                    continue
+
+                module.enable_grad()
+
+    @property
+    def lora_modules(self) -> List[List[BaseLoRA]]:
+        return self._lora_modules
+
+    @property
+    def enabled_modules_count(self) -> int:
+        count = 0
+        for modules in self._lora_modules:
+            for module in modules:
+                if module is not None and module.enabled:
+                    count += 1
+
+        return count

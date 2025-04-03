@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 from time import time
 
 from transformers.pytorch_utils import Conv1D
@@ -22,12 +22,19 @@ torch.manual_seed(32)
 # model_name = "meta-llama/Llama-3.2-1B"
 # model_name = "openai-community/gpt2-medium"
 model_name = "EleutherAI/gpt-neo-2.7B"
+config = AutoConfig.from_pretrained(model_name)
+config._attn_implementation = "flash_attention_2"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    config=config
+)
 
 ''''''
 init_strategy = LoRAFullInitStrategy(LoRA)
-weights_storage = LoRAWeightsStorage(ArgumentParsingStrategy({}), device, init_strategy)
+weights_storage = LoRAWeightsStorage(ArgumentParsingStrategy({}), init_strategy, device)
 
 pseudo_model = PseudoModule.create_patched_pseudo_model(
     weights_storage=weights_storage,
@@ -43,7 +50,6 @@ pseudo_model = PseudoModule.create_patched_pseudo_model(
     ],
 )
 weights_storage.build_storage()
-
 model.to(device)
 
 # start_inp = "The mean and standard-deviation are calculated per-dimension over "
@@ -59,5 +65,14 @@ outputs = model.generate(**inputs, max_length=50, use_cache=False)
 print(time() - start)
 print(tokenizer.decode(outputs[0]))
 '''
-# print(model.state_dict)
-print(weights_storage._lora_modules)
+
+'''
+def print_module(module: nn.Module):
+    print(module.__class__)
+    for child in module.children():
+        print_module(child)
+
+
+print_module(model)
+print(model)
+'''

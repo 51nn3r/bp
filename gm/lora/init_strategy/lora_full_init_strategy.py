@@ -1,6 +1,7 @@
 from abc import ABC
 from typing import List, Callable
 
+import torch
 from torch import nn
 
 from gm.layers.shaped_layer import ShapedLayer
@@ -25,7 +26,27 @@ class LoRAFullInitStrategy(BaseLoRAInitStrategy, ABC):
             self,
             layers: List[ShapedLayer],
             rank: int = 1,
+            alpha: float = 1.,
+            dtype: torch.dtype = torch.float16,
+            lora_dropout: float = 0.0,
     ) -> List[List[BaseLoRA | None]]:
-        return [[
-            self._lora_cls(shape, rank, self._init_function) for shape in layer.shapes
-        ] for layer in layers]
+        lora_adapters = []
+        for layer in layers:
+            layer_adapters = []
+            for shape in layer.shapes:
+                if len(shape) > 1:
+                    layer_adapters.append(self._lora_cls(
+                        shape=shape,
+                        rank=rank,
+                        alpha=alpha,
+                        init_function=self._init_function,
+                        dtype=dtype,
+                        lora_dropout=lora_dropout,
+                    ))
+                else:
+                    layer_adapters.append(None)
+
+            lora_adapters.append(layer_adapters)
+
+        return lora_adapters
+

@@ -6,34 +6,35 @@ from torch.nn import init
 
 from gm.layers.pseudo_layers.argument_parsing_strategy.argument_parsing_strategy import ArgumentParsingStrategy
 from gm.layers.shaped_layer import ShapedLayer
+from gm.layers.weights_storage.configs.weights_storage_config import WeightsStorageConfig
 
 from gm.settings import META_DEVICE, CPU_DEVICE
 
 
 class WeightsStorage(nn.Module):
-    _argument_parsing_strategy: ArgumentParsingStrategy
     # List of layers, can be used to get layer index
     _layers: List[ShapedLayer]
     # List of weights for each layer, [layers_count, current_layer_shapes]
     _storage: List[List[nn.Parameter]]
     _device: torch._C.device | None
+    # Config
+    _config: WeightsStorageConfig
 
     def __init__(
             self,
-            argument_parsing_strategy: ArgumentParsingStrategy,
-            device: torch._C.device | None = None,
+            config: WeightsStorageConfig,
             **kwargs,
     ):
         super().__init__(**kwargs)
 
-        self._argument_parsing_strategy = argument_parsing_strategy
-        self._device = device if device is not None else torch.device(CPU_DEVICE)
+        self._device = config.device if config.device is not None else torch.device(CPU_DEVICE)
+        self._config = config
         self._layers = []
         self._storage = []
 
     def add_layer(
             self,
-            layer: ShapedLayer
+            layer: ShapedLayer,
     ) -> int:
         """
         Registers a new layer and creates a placeholder for its weights.
@@ -47,7 +48,7 @@ class WeightsStorage(nn.Module):
         self._layers.append(layer)
         # For each expected weight shape in the layer, create a placeholder parameter on the META_DEVICE
         self._storage.append([
-            nn.Parameter(torch.empty(shape, device=META_DEVICE)) for shape in layer.shapes
+            nn.Parameter(torch.empty(shape, device=META_DEVICE, dtype=self._config.dtype)) for shape in layer.shapes
         ])
         return layer_idx
 
@@ -129,4 +130,4 @@ class WeightsStorage(nn.Module):
 
     @property
     def get_argument_parsing_strategy(self) -> ArgumentParsingStrategy:
-        return self._argument_parsing_strategy
+        return self._config.argument_parsing_strategy
