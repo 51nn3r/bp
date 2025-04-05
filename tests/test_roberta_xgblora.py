@@ -13,7 +13,7 @@ from gm.layers.pseudo_layers.pseudo_linear import PseudoLinear
 from gm.layers.pseudo_layers.transformers.pseudo_conv1d import PseudoConv1D
 from gm.layers.weights_storage.configs.lora_weights_storage_config import LoraWeightsStorageConfig
 from gm.layers.weights_storage.lora_weights_storage import LoRAWeightsStorage
-from gm.lora.enable_strategy.xgblora_enable_strategy import XgbLoraEnableStrategy
+from gm.lora.enable_strategy.weighted_subset_enable_strategy import WeightedSubsetEnableStrategy
 from gm.lora.init_strategy.lora_full_init_strategy import LoRAFullInitStrategy
 from gm.lora.lora import LoRA
 from gm.pseudo_model import PseudoModule
@@ -69,7 +69,8 @@ def main():
         LoraWeightsStorageConfig(
             argument_parsing_strategy=ArgumentParsingStrategy({}),
             lora_init_strategy=LoRAFullInitStrategy(LoRA),
-            lora_enable_strategy_cls=XgbLoraEnableStrategy,
+            lora_enable_strategy_cls=WeightedSubsetEnableStrategy,
+            # lora_enable_strategy_cls=LoraEnableAllStrategy,
             device=device,
             dtype=torch.float32,
             enabled_adapters_proportion=1 / 3,
@@ -102,8 +103,9 @@ def main():
 
     model.train()
     weights_storage.train()
+    weights_storage.enable_grad()
 
-    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=2e-4, weight_decay=0.01)
+    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=5e-5, weight_decay=0.01)
     '''
     base_params = [p for p in model.classifier.parameters() if p.requires_grad]
     lora_params = lora_params = [
@@ -126,11 +128,18 @@ def main():
     eval_accuracy_metric = Accuracy(task="multiclass", num_classes=2).to(device)
 
     weights_storage.reset_lora()
+    train_epochs = 3
+    steps_per_epoch = len(train_loader)
+    k = 10
+    update_freq = train_epochs * steps_per_epoch // k
+    print(f'[+] udpate frequency is {update_freq}')
 
-    num_epochs = 300  # для примера поменьше эпох
+    num_epochs = train_epochs  # для примера поменьше эпох
+    step_index = 0
     for epoch in range(num_epochs):
         model.train()
         weights_storage.train()
+        weights_storage.enable_grad()
         running_loss = 0.0
         train_accuracy_metric.reset()
         logging.info(f"=== Epoch {epoch + 1}/{num_epochs} ===")
@@ -179,9 +188,11 @@ def main():
                       f"Loss: {avg_loss:.4f}, Train Acc: {current_acc:.4f}")
                 print(weights_storage.enabled_modules_count)
 
-            if (step + 1) % 100 == 0:
+            if (step_index + 1) % update_freq == 0:
                 weights_storage.apply_weights()
                 weights_storage.reset_lora()
+
+            step_index += 1
 
         avg_train_loss = running_loss / len(train_loader)
         train_acc = train_accuracy_metric.compute().item()

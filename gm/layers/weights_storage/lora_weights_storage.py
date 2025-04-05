@@ -115,7 +115,7 @@ class LoRAWeightsStorage(WeightsStorage):
     ):
         for layer_idx, lora_module_group in enumerate(self._lora_modules):
             for parameters_idx, lora_module in enumerate(lora_module_group):
-                if lora_module is None:
+                if lora_module is None or not lora_module.enabled:
                     continue
 
                 with torch.no_grad():
