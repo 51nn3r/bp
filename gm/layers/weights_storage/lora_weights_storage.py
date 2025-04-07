@@ -74,7 +74,7 @@ class LoRAWeightsStorage(WeightsStorage):
 
         self._lora_enable_strategy = self._config.lora_enable_strategy_cls(
             adapters_count=len(lora_modules),
-            enabled_adapters_proportion=self._config.enabled_adapters_proportion
+            enabled_adapters_proportion=self._config.enabled_adapters_proportion,
         )
 
         for layer_modules, should_be_activated in zip(
@@ -120,7 +120,6 @@ class LoRAWeightsStorage(WeightsStorage):
 
                 with torch.no_grad():
                     self._storage[layer_idx][parameters_idx] += lora_module.compute_lora_delta()
-                    pass
 
     def reset_lora(self):
         for layer_modules, should_be_activated in zip(

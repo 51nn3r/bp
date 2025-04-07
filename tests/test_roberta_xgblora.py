@@ -18,6 +18,8 @@ from gm.lora.init_strategy.lora_full_init_strategy import LoRAFullInitStrategy
 from gm.lora.lora import LoRA
 from gm.pseudo_model import PseudoModule
 
+from gm.utils import create_glue_dataset
+
 logging.basicConfig(
     filename="training_log.txt",
     filemode="w",  # перезаписываем файл при каждом запуске
@@ -39,30 +41,23 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_name = "FacebookAI/xlm-roberta-large"
 
-    # Загружаем датасет SST-2 из GLUE
-    dataset = load_dataset("glue", "sst2")
+    # task = 'sst2'
+    task = 'qnli'
+    dataset = load_dataset("glue", task)
 
     # Загружаем токенизатор
     tokenizer = XLMRobertaTokenizer.from_pretrained(model_name)
 
-    # Токенизация датасета
-    tokenized_datasets = dataset.map(
-        lambda ex: tokenize_function(ex, tokenizer, max_length=128),
-        batched=True
-    )
-    tokenized_datasets = tokenized_datasets.remove_columns(["sentence", "idx"])
-    tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
-    tokenized_datasets.set_format("torch")
-
-    train_dataset = tokenized_datasets["train"]
-    eval_dataset = tokenized_datasets["validation"]
+    train_dataset = create_glue_dataset(dataset["train"], task, tokenizer)
+    eval_dataset = create_glue_dataset(dataset["validation"], task, tokenizer)
 
     # train_loader = DataLoader([train_dataset[i] for i in range(64)], batch_size=64, shuffle=True)
     train_loader = DataLoader(train_dataset, batch_size=64)
     eval_loader = DataLoader(eval_dataset, batch_size=128)
 
     # Шаг 1: Загружаем "базовую" модель
-    model = XLMRobertaForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    NUM_CLASSES = 2
+    model = XLMRobertaForSequenceClassification.from_pretrained(model_name, num_labels=NUM_CLASSES)
 
     # Оборачиваем модель в Pseudo-модель
     weights_storage = LoRAWeightsStorage(
@@ -91,7 +86,7 @@ def main():
         ],
     )
 
-    weights_storage.build_storage(1, 2, torch.float32, 0.1)
+    weights_storage.build_storage(1, 4, torch.float32, 0.1)
     model.to(device)
 
     for param in model.parameters():
@@ -105,10 +100,11 @@ def main():
     weights_storage.train()
     weights_storage.enable_grad()
 
-    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=5e-5, weight_decay=0.01)
+    '''
+    optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad], lr=8e-5, weight_decay=0.01)
     '''
     base_params = [p for p in model.classifier.parameters() if p.requires_grad]
-    lora_params = lora_params = [
+    lora_params = [
         param
         for layer_adapters in weights_storage._lora_modules
         for adapter in layer_adapters
@@ -117,20 +113,19 @@ def main():
         if param.requires_grad
     ]
     optimizer = optim.AdamW([
-      {"params": base_params, "weight_decay": 0.01},
-      {"params": lora_params, "weight_decay": 0.0},
-    ], lr=2e-5)
-    '''
+        {"params": base_params, "lr": 2e-5, "weight_decay": 0.01},
+        {"params": lora_params, "lr": 4e-5, "weight_decay": 0.01},
+    ])
 
     scaler = torch.cuda.amp.GradScaler()
 
-    train_accuracy_metric = Accuracy(task="multiclass", num_classes=2).to(device)
-    eval_accuracy_metric = Accuracy(task="multiclass", num_classes=2).to(device)
+    train_accuracy_metric = Accuracy(task="multiclass", num_classes=NUM_CLASSES).to(device)
+    eval_accuracy_metric = Accuracy(task="multiclass", num_classes=NUM_CLASSES).to(device)
 
     weights_storage.reset_lora()
     train_epochs = 3
     steps_per_epoch = len(train_loader)
-    k = 10
+    k = 20
     update_freq = train_epochs * steps_per_epoch // k
     print(f'[+] udpate frequency is {update_freq}')
 

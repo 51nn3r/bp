@@ -116,6 +116,14 @@ def create_glue_dataset(dataset, task, tokenizer, max_length=128):
                 max_length=max_length,
                 padding="max_length"
             )
+        elif task.lower() == "qnli":
+            tokenized = tokenizer(
+                ex["question"],
+                ex["sentence"],
+                truncation=True,
+                max_length=max_length,
+                padding="max_length"
+            )
         else:
             tokenized = tokenizer(
                 ex.get("sentence", ""),
@@ -127,6 +135,11 @@ def create_glue_dataset(dataset, task, tokenizer, max_length=128):
         tokenized["labels"] = ex["label"]
         return tokenized
 
-    dataset = dataset.map(tokenize_example, batched=False)
+    dataset = dataset.map(
+        lambda ex: tokenize_example(ex),
+        batched=True,
+    )
+    actual_columns_to_remove = [col for col in ["sentence", "question", "sentence1", "sentence2", "idx"] if col in dataset.column_names]
+    dataset = dataset.remove_columns(actual_columns_to_remove)
     dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
     return dataset

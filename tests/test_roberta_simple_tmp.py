@@ -8,6 +8,8 @@ from torchmetrics import Accuracy
 from peft import LoraConfig, get_peft_model, TaskType
 import logging
 
+from gm.utils import create_glue_dataset
+
 logging.basicConfig(
     filename="training_log.txt",
     filemode="w",  # перезаписываем файл при каждом запуске
@@ -29,30 +31,29 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_name = "FacebookAI/xlm-roberta-large"
 
-    # Загружаем датасет SST-2 из GLUE
-    dataset = load_dataset("glue", "sst2")
+    task = 'sst2'
+    # task = 'mnli'
+    dataset = load_dataset("glue", task)
 
     # Загружаем токенизатор
     tokenizer = XLMRobertaTokenizer.from_pretrained(model_name)
 
-    # Токенизация датасета
-    tokenized_datasets = dataset.map(
-        lambda ex: tokenize_function(ex, tokenizer, max_length=128),
-        batched=True
-    )
-    tokenized_datasets = tokenized_datasets.remove_columns(["sentence", "idx"])
-    tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
-    tokenized_datasets.set_format("torch")
-
+    MAX_LENGTH = 128
+    tokenized_datasets = create_glue_dataset(dataset, task, tokenizer, max_length=MAX_LENGTH)
     train_dataset = tokenized_datasets["train"]
-    eval_dataset = tokenized_datasets["validation"]
+    eval_datasets = [
+        tokenized_datasets["validation"],
+        # tokenized_datasets["validation_matched"],
+        # tokenized_datasets["validation_mismatched"],
+    ]
 
     # train_loader = DataLoader([train_dataset[i] for i in range(64)], batch_size=64, shuffle=True)
-    train_loader = DataLoader(train_dataset, batch_size=64)
-    eval_loader = DataLoader(eval_dataset, batch_size=128)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    eval_loaders = [DataLoader(eval_dataset, batch_size=128) for eval_dataset in eval_datasets]
 
     # Шаг 1: Загружаем "базовую" модель
-    model = XLMRobertaForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    NUM_CLASSES = 2
+    model = XLMRobertaForSequenceClassification.from_pretrained(model_name, num_labels=NUM_CLASSES)
 
     # ----------------------------------------------------------------------
     # Шаг 2: Создаём LoRA-конфиг и превращаем модель в PEFT-модель
@@ -81,13 +82,13 @@ def main():
     model.print_trainable_parameters()
     # ----------------------------------------------------------------------
 
-    optimizer = optim.AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=2e-5, weight_decay=0.01)
     scaler = torch.cuda.amp.GradScaler()
 
-    train_accuracy_metric = Accuracy(task="multiclass", num_classes=2).to(device)
-    eval_accuracy_metric = Accuracy(task="multiclass", num_classes=2).to(device)
+    train_accuracy_metric = Accuracy(task="multiclass", num_classes=NUM_CLASSES).to(device)
+    eval_accuracy_metric = Accuracy(task="multiclass", num_classes=NUM_CLASSES).to(device)
 
-    num_epochs = 300  # для примера поменьше эпох
+    num_epochs = 3  # для примера поменьше эпох
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -116,7 +117,7 @@ def main():
 
                 for name, param in model.named_parameters():
                     if 'lora' in name:
-                        print(param)
+                        print(dir(param))
                         print('-' * 100)
                         print(param.grad)
                         break
@@ -144,21 +145,23 @@ def main():
 
         # Оценка на валидационном наборе
         model.eval()
-        eval_loss = 0.0
-        eval_accuracy_metric.reset()
-        with torch.no_grad():
-            for batch in eval_loader:
-                batch = {k: v.to(device) for k, v in batch.items()}
-                with torch.cuda.amp.autocast():
-                    outputs = model(**batch)
-                    loss = outputs.loss
-                eval_loss += loss.item()
-                predictions = torch.argmax(outputs.logits, dim=-1)
-                eval_accuracy_metric.update(predictions, batch["labels"])
+        for test_idx in range(len(eval_datasets)):
+            eval_loader = eval_loaders[test_idx]
+            eval_loss = 0.0
+            eval_accuracy_metric.reset()
+            with torch.no_grad():
+                for batch in eval_loader:
+                    batch = {k: v.to(device) for k, v in batch.items()}
+                    with torch.cuda.amp.autocast():
+                        outputs = model(**batch)
+                        loss = outputs.loss
+                    eval_loss += loss.item()
+                    predictions = torch.argmax(outputs.logits, dim=-1)
+                    eval_accuracy_metric.update(predictions, batch["labels"])
 
-        avg_eval_loss = eval_loss / len(eval_loader)
-        eval_acc = eval_accuracy_metric.compute().item()
-        print(f"[Epoch {epoch+1}] eval loss: {avg_eval_loss:.4f}, eval accuracy: {eval_acc:.4f}")
+            avg_eval_loss = eval_loss / len(eval_loader)
+            eval_acc = eval_accuracy_metric.compute().item()
+            print(f"[Epoch {epoch + 1}] eval-{test_idx} loss: {avg_eval_loss:.4f}, eval accuracy: {eval_acc:.4f}")
         ''''''
 
 
