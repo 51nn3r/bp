@@ -1,0 +1,205 @@
+2025-05-20 05:57:03,732 - WARNING - Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+2025-05-20 05:57:16,699 - INFO - === Epoch 1/6 ===
+2025-05-20 05:57:50,903 - INFO - Epoch 1, Step 100/3068, Loss: 1.1027, Train Acc: 0.3396
+2025-05-20 05:58:24,681 - INFO - Epoch 1, Step 200/3068, Loss: 1.1013, Train Acc: 0.3372
+2025-05-20 05:58:58,504 - INFO - Epoch 1, Step 300/3068, Loss: 1.0928, Train Acc: 0.3592
+2025-05-20 05:59:32,347 - INFO - Epoch 1, Step 400/3068, Loss: 1.0740, Train Acc: 0.3914
+2025-05-20 06:00:06,198 - INFO - Epoch 1, Step 500/3068, Loss: 1.0500, Train Acc: 0.4239
+2025-05-20 06:00:40,062 - INFO - Epoch 1, Step 600/3068, Loss: 1.0236, Train Acc: 0.4528
+2025-05-20 06:01:13,950 - INFO - Epoch 1, Step 700/3068, Loss: 1.0009, Train Acc: 0.4765
+2025-05-20 06:01:47,895 - INFO - Epoch 1, Step 800/3068, Loss: 0.9818, Train Acc: 0.4951
+2025-05-20 06:02:21,831 - INFO - Epoch 1, Step 900/3068, Loss: 0.9650, Train Acc: 0.5110
+2025-05-20 06:02:55,742 - INFO - Epoch 1, Step 1000/3068, Loss: 0.9505, Train Acc: 0.5249
+2025-05-20 06:03:29,623 - INFO - Epoch 1, Step 1100/3068, Loss: 0.9368, Train Acc: 0.5368
+2025-05-20 06:04:03,502 - INFO - Epoch 1, Step 1200/3068, Loss: 0.9252, Train Acc: 0.5473
+2025-05-20 06:04:37,388 - INFO - Epoch 1, Step 1300/3068, Loss: 0.9136, Train Acc: 0.5570
+2025-05-20 06:05:11,265 - INFO - Epoch 1, Step 1400/3068, Loss: 0.9033, Train Acc: 0.5659
+2025-05-20 06:05:45,143 - INFO - Epoch 1, Step 1500/3068, Loss: 0.8937, Train Acc: 0.5732
+2025-05-20 06:06:19,054 - INFO - Epoch 1, Step 1600/3068, Loss: 0.8851, Train Acc: 0.5800
+2025-05-20 06:06:52,983 - INFO - Epoch 1, Step 1700/3068, Loss: 0.8773, Train Acc: 0.5858
+2025-05-20 06:07:26,888 - INFO - Epoch 1, Step 1800/3068, Loss: 0.8703, Train Acc: 0.5912
+2025-05-20 06:08:04,784 - INFO - Epoch 1, Step 1900/3068, Loss: 0.8636, Train Acc: 0.5965
+2025-05-20 06:08:38,588 - INFO - Epoch 1, Step 2000/3068, Loss: 0.8565, Train Acc: 0.6017
+2025-05-20 06:09:12,445 - INFO - Epoch 1, Step 2100/3068, Loss: 0.8490, Train Acc: 0.6069
+2025-05-20 06:09:46,330 - INFO - Epoch 1, Step 2200/3068, Loss: 0.8427, Train Acc: 0.6110
+2025-05-20 06:10:20,227 - INFO - Epoch 1, Step 2300/3068, Loss: 0.8363, Train Acc: 0.6154
+2025-05-20 06:10:54,151 - INFO - Epoch 1, Step 2400/3068, Loss: 0.8302, Train Acc: 0.6193
+2025-05-20 06:11:28,027 - INFO - Epoch 1, Step 2500/3068, Loss: 0.8246, Train Acc: 0.6230
+2025-05-20 06:12:01,917 - INFO - Epoch 1, Step 2600/3068, Loss: 0.8187, Train Acc: 0.6267
+2025-05-20 06:12:35,844 - INFO - Epoch 1, Step 2700/3068, Loss: 0.8138, Train Acc: 0.6298
+2025-05-20 06:13:09,784 - INFO - Epoch 1, Step 2800/3068, Loss: 0.8090, Train Acc: 0.6327
+2025-05-20 06:13:43,665 - INFO - Epoch 1, Step 2900/3068, Loss: 0.8045, Train Acc: 0.6355
+2025-05-20 06:14:17,594 - INFO - Epoch 1, Step 3000/3068, Loss: 0.8004, Train Acc: 0.6382
+2025-05-20 06:14:40,692 - INFO - [Epoch 1] avg training loss: 0.7975, accuracy: 0.6401
+2025-05-20 06:14:50,026 - INFO - [Epoch 1] eval-0 loss: 0.6215, eval accuracy: 0.7456
+2025-05-20 06:14:59,343 - INFO - [Epoch 1] eval-1 loss: 0.5949, eval accuracy: 0.7601
+2025-05-20 06:14:59,382 - INFO - === Epoch 2/6 ===
+2025-05-20 06:15:33,296 - INFO - Epoch 2, Step 100/3068, Loss: 0.6550, Train Acc: 0.7278
+2025-05-20 06:16:07,186 - INFO - Epoch 2, Step 200/3068, Loss: 0.6527, Train Acc: 0.7295
+2025-05-20 06:16:41,065 - INFO - Epoch 2, Step 300/3068, Loss: 0.6582, Train Acc: 0.7263
+2025-05-20 06:17:14,991 - INFO - Epoch 2, Step 400/3068, Loss: 0.6596, Train Acc: 0.7261
+2025-05-20 06:17:48,890 - INFO - Epoch 2, Step 500/3068, Loss: 0.6578, Train Acc: 0.7260
+2025-05-20 06:18:22,815 - INFO - Epoch 2, Step 600/3068, Loss: 0.6559, Train Acc: 0.7274
+2025-05-20 06:19:00,682 - INFO - Epoch 2, Step 700/3068, Loss: 0.6560, Train Acc: 0.7280
+2025-05-20 06:19:34,477 - INFO - Epoch 2, Step 800/3068, Loss: 0.6536, Train Acc: 0.7290
+2025-05-20 06:20:08,376 - INFO - Epoch 2, Step 900/3068, Loss: 0.6524, Train Acc: 0.7292
+2025-05-20 06:20:42,298 - INFO - Epoch 2, Step 1000/3068, Loss: 0.6499, Train Acc: 0.7307
+2025-05-20 06:21:16,166 - INFO - Epoch 2, Step 1100/3068, Loss: 0.6483, Train Acc: 0.7314
+2025-05-20 06:21:50,089 - INFO - Epoch 2, Step 1200/3068, Loss: 0.6470, Train Acc: 0.7316
+2025-05-20 06:22:23,992 - INFO - Epoch 2, Step 1300/3068, Loss: 0.6453, Train Acc: 0.7323
+2025-05-20 06:22:57,873 - INFO - Epoch 2, Step 1400/3068, Loss: 0.6439, Train Acc: 0.7333
+2025-05-20 06:23:31,760 - INFO - Epoch 2, Step 1500/3068, Loss: 0.6417, Train Acc: 0.7344
+2025-05-20 06:24:05,645 - INFO - Epoch 2, Step 1600/3068, Loss: 0.6407, Train Acc: 0.7347
+2025-05-20 06:24:39,519 - INFO - Epoch 2, Step 1700/3068, Loss: 0.6395, Train Acc: 0.7352
+2025-05-20 06:25:13,399 - INFO - Epoch 2, Step 1800/3068, Loss: 0.6387, Train Acc: 0.7357
+2025-05-20 06:25:47,296 - INFO - Epoch 2, Step 1900/3068, Loss: 0.6377, Train Acc: 0.7361
+2025-05-20 06:26:21,196 - INFO - Epoch 2, Step 2000/3068, Loss: 0.6364, Train Acc: 0.7369
+2025-05-20 06:26:55,076 - INFO - Epoch 2, Step 2100/3068, Loss: 0.6356, Train Acc: 0.7372
+2025-05-20 06:27:28,959 - INFO - Epoch 2, Step 2200/3068, Loss: 0.6342, Train Acc: 0.7379
+2025-05-20 06:28:02,858 - INFO - Epoch 2, Step 2300/3068, Loss: 0.6336, Train Acc: 0.7381
+2025-05-20 06:28:36,754 - INFO - Epoch 2, Step 2400/3068, Loss: 0.6319, Train Acc: 0.7388
+2025-05-20 06:29:14,654 - INFO - Epoch 2, Step 2500/3068, Loss: 0.6314, Train Acc: 0.7390
+2025-05-20 06:29:48,470 - INFO - Epoch 2, Step 2600/3068, Loss: 0.6307, Train Acc: 0.7394
+2025-05-20 06:30:22,308 - INFO - Epoch 2, Step 2700/3068, Loss: 0.6300, Train Acc: 0.7397
+2025-05-20 06:30:56,185 - INFO - Epoch 2, Step 2800/3068, Loss: 0.6288, Train Acc: 0.7404
+2025-05-20 06:31:30,062 - INFO - Epoch 2, Step 2900/3068, Loss: 0.6279, Train Acc: 0.7409
+2025-05-20 06:32:03,948 - INFO - Epoch 2, Step 3000/3068, Loss: 0.6268, Train Acc: 0.7415
+2025-05-20 06:32:27,029 - INFO - [Epoch 2] avg training loss: 0.6265, accuracy: 0.7417
+2025-05-20 06:32:36,373 - INFO - [Epoch 2] eval-0 loss: 0.5528, eval accuracy: 0.7761
+2025-05-20 06:32:45,679 - INFO - [Epoch 2] eval-1 loss: 0.5382, eval accuracy: 0.7855
+2025-05-20 06:32:45,718 - INFO - === Epoch 3/6 ===
+2025-05-20 06:33:19,674 - INFO - Epoch 3, Step 100/3068, Loss: 0.5856, Train Acc: 0.7633
+2025-05-20 06:33:53,550 - INFO - Epoch 3, Step 200/3068, Loss: 0.5945, Train Acc: 0.7561
+2025-05-20 06:34:27,474 - INFO - Epoch 3, Step 300/3068, Loss: 0.5923, Train Acc: 0.7583
+2025-05-20 06:35:01,387 - INFO - Epoch 3, Step 400/3068, Loss: 0.5937, Train Acc: 0.7574
+2025-05-20 06:35:35,289 - INFO - Epoch 3, Step 500/3068, Loss: 0.5939, Train Acc: 0.7572
+2025-05-20 06:36:09,190 - INFO - Epoch 3, Step 600/3068, Loss: 0.5944, Train Acc: 0.7573
+2025-05-20 06:36:43,082 - INFO - Epoch 3, Step 700/3068, Loss: 0.5950, Train Acc: 0.7575
+2025-05-20 06:37:16,990 - INFO - Epoch 3, Step 800/3068, Loss: 0.5952, Train Acc: 0.7569
+2025-05-20 06:37:50,922 - INFO - Epoch 3, Step 900/3068, Loss: 0.5932, Train Acc: 0.7577
+2025-05-20 06:38:24,837 - INFO - Epoch 3, Step 1000/3068, Loss: 0.5924, Train Acc: 0.7582
+2025-05-20 06:38:58,759 - INFO - Epoch 3, Step 1100/3068, Loss: 0.5917, Train Acc: 0.7585
+2025-05-20 06:39:32,669 - INFO - Epoch 3, Step 1200/3068, Loss: 0.5913, Train Acc: 0.7588
+2025-05-20 06:40:10,549 - INFO - Epoch 3, Step 1300/3068, Loss: 0.5905, Train Acc: 0.7591
+2025-05-20 06:40:44,361 - INFO - Epoch 3, Step 1400/3068, Loss: 0.5900, Train Acc: 0.7593
+2025-05-20 06:41:18,246 - INFO - Epoch 3, Step 1500/3068, Loss: 0.5890, Train Acc: 0.7597
+2025-05-20 06:41:52,122 - INFO - Epoch 3, Step 1600/3068, Loss: 0.5888, Train Acc: 0.7599
+2025-05-20 06:42:26,011 - INFO - Epoch 3, Step 1700/3068, Loss: 0.5875, Train Acc: 0.7605
+2025-05-20 06:42:59,890 - INFO - Epoch 3, Step 1800/3068, Loss: 0.5863, Train Acc: 0.7610
+2025-05-20 06:43:33,788 - INFO - Epoch 3, Step 1900/3068, Loss: 0.5859, Train Acc: 0.7612
+2025-05-20 06:44:07,672 - INFO - Epoch 3, Step 2000/3068, Loss: 0.5855, Train Acc: 0.7616
+2025-05-20 06:44:41,559 - INFO - Epoch 3, Step 2100/3068, Loss: 0.5849, Train Acc: 0.7618
+2025-05-20 06:45:15,500 - INFO - Epoch 3, Step 2200/3068, Loss: 0.5844, Train Acc: 0.7621
+2025-05-20 06:45:49,425 - INFO - Epoch 3, Step 2300/3068, Loss: 0.5840, Train Acc: 0.7623
+2025-05-20 06:46:23,295 - INFO - Epoch 3, Step 2400/3068, Loss: 0.5831, Train Acc: 0.7628
+2025-05-20 06:46:57,173 - INFO - Epoch 3, Step 2500/3068, Loss: 0.5827, Train Acc: 0.7630
+2025-05-20 06:47:31,053 - INFO - Epoch 3, Step 2600/3068, Loss: 0.5822, Train Acc: 0.7632
+2025-05-20 06:48:04,927 - INFO - Epoch 3, Step 2700/3068, Loss: 0.5818, Train Acc: 0.7635
+2025-05-20 06:48:38,809 - INFO - Epoch 3, Step 2800/3068, Loss: 0.5816, Train Acc: 0.7636
+2025-05-20 06:49:12,707 - INFO - Epoch 3, Step 2900/3068, Loss: 0.5814, Train Acc: 0.7636
+2025-05-20 06:49:46,602 - INFO - Epoch 3, Step 3000/3068, Loss: 0.5809, Train Acc: 0.7638
+2025-05-20 06:50:13,662 - INFO - [Epoch 3] avg training loss: 0.5804, accuracy: 0.7641
+2025-05-20 06:50:23,038 - INFO - [Epoch 3] eval-0 loss: 0.5458, eval accuracy: 0.7797
+2025-05-20 06:50:32,337 - INFO - [Epoch 3] eval-1 loss: 0.5337, eval accuracy: 0.7843
+2025-05-20 06:50:32,376 - INFO - === Epoch 4/6 ===
+2025-05-20 06:51:06,203 - INFO - Epoch 4, Step 100/3068, Loss: 0.5758, Train Acc: 0.7661
+2025-05-20 06:51:40,032 - INFO - Epoch 4, Step 200/3068, Loss: 0.5713, Train Acc: 0.7671
+2025-05-20 06:52:13,882 - INFO - Epoch 4, Step 300/3068, Loss: 0.5715, Train Acc: 0.7667
+2025-05-20 06:52:47,747 - INFO - Epoch 4, Step 400/3068, Loss: 0.5682, Train Acc: 0.7693
+2025-05-20 06:53:21,624 - INFO - Epoch 4, Step 500/3068, Loss: 0.5669, Train Acc: 0.7697
+2025-05-20 06:53:55,508 - INFO - Epoch 4, Step 600/3068, Loss: 0.5658, Train Acc: 0.7700
+2025-05-20 06:54:29,400 - INFO - Epoch 4, Step 700/3068, Loss: 0.5651, Train Acc: 0.7706
+2025-05-20 06:55:03,296 - INFO - Epoch 4, Step 800/3068, Loss: 0.5647, Train Acc: 0.7707
+2025-05-20 06:55:37,231 - INFO - Epoch 4, Step 900/3068, Loss: 0.5639, Train Acc: 0.7712
+2025-05-20 06:56:11,155 - INFO - Epoch 4, Step 1000/3068, Loss: 0.5630, Train Acc: 0.7714
+2025-05-20 06:56:45,095 - INFO - Epoch 4, Step 1100/3068, Loss: 0.5624, Train Acc: 0.7718
+2025-05-20 06:57:18,982 - INFO - Epoch 4, Step 1200/3068, Loss: 0.5613, Train Acc: 0.7723
+2025-05-20 06:57:52,864 - INFO - Epoch 4, Step 1300/3068, Loss: 0.5609, Train Acc: 0.7726
+2025-05-20 06:58:26,748 - INFO - Epoch 4, Step 1400/3068, Loss: 0.5607, Train Acc: 0.7725
+2025-05-20 06:59:00,674 - INFO - Epoch 4, Step 1500/3068, Loss: 0.5604, Train Acc: 0.7729
+2025-05-20 06:59:34,580 - INFO - Epoch 4, Step 1600/3068, Loss: 0.5603, Train Acc: 0.7731
+2025-05-20 07:00:08,513 - INFO - Epoch 4, Step 1700/3068, Loss: 0.5596, Train Acc: 0.7738
+2025-05-20 07:00:42,428 - INFO - Epoch 4, Step 1800/3068, Loss: 0.5595, Train Acc: 0.7740
+2025-05-20 07:01:20,337 - INFO - Epoch 4, Step 1900/3068, Loss: 0.5601, Train Acc: 0.7736
+2025-05-20 07:01:54,160 - INFO - Epoch 4, Step 2000/3068, Loss: 0.5597, Train Acc: 0.7736
+2025-05-20 07:02:28,009 - INFO - Epoch 4, Step 2100/3068, Loss: 0.5594, Train Acc: 0.7736
+2025-05-20 07:03:01,868 - INFO - Epoch 4, Step 2200/3068, Loss: 0.5592, Train Acc: 0.7737
+2025-05-20 07:03:35,743 - INFO - Epoch 4, Step 2300/3068, Loss: 0.5593, Train Acc: 0.7736
+2025-05-20 07:04:09,647 - INFO - Epoch 4, Step 2400/3068, Loss: 0.5591, Train Acc: 0.7736
+2025-05-20 07:04:43,534 - INFO - Epoch 4, Step 2500/3068, Loss: 0.5586, Train Acc: 0.7737
+2025-05-20 07:05:17,425 - INFO - Epoch 4, Step 2600/3068, Loss: 0.5584, Train Acc: 0.7738
+2025-05-20 07:05:51,343 - INFO - Epoch 4, Step 2700/3068, Loss: 0.5580, Train Acc: 0.7738
+2025-05-20 07:06:25,222 - INFO - Epoch 4, Step 2800/3068, Loss: 0.5577, Train Acc: 0.7739
+2025-05-20 07:06:59,103 - INFO - Epoch 4, Step 2900/3068, Loss: 0.5576, Train Acc: 0.7739
+2025-05-20 07:07:32,997 - INFO - Epoch 4, Step 3000/3068, Loss: 0.5573, Train Acc: 0.7742
+2025-05-20 07:07:56,072 - INFO - [Epoch 4] avg training loss: 0.5568, accuracy: 0.7744
+2025-05-20 07:08:05,413 - INFO - [Epoch 4] eval-0 loss: 0.5148, eval accuracy: 0.7960
+2025-05-20 07:08:14,713 - INFO - [Epoch 4] eval-1 loss: 0.4993, eval accuracy: 0.8029
+2025-05-20 07:08:14,752 - INFO - === Epoch 5/6 ===
+2025-05-20 07:08:48,635 - INFO - Epoch 5, Step 100/3068, Loss: 0.5379, Train Acc: 0.7841
+2025-05-20 07:09:22,497 - INFO - Epoch 5, Step 200/3068, Loss: 0.5341, Train Acc: 0.7864
+2025-05-20 07:09:56,379 - INFO - Epoch 5, Step 300/3068, Loss: 0.5349, Train Acc: 0.7857
+2025-05-20 07:10:30,289 - INFO - Epoch 5, Step 400/3068, Loss: 0.5397, Train Acc: 0.7836
+2025-05-20 07:11:04,212 - INFO - Epoch 5, Step 500/3068, Loss: 0.5390, Train Acc: 0.7835
+2025-05-20 07:11:38,112 - INFO - Epoch 5, Step 600/3068, Loss: 0.5375, Train Acc: 0.7847
+2025-05-20 07:12:15,920 - INFO - Epoch 5, Step 700/3068, Loss: 0.5412, Train Acc: 0.7821
+2025-05-20 07:12:49,717 - INFO - Epoch 5, Step 800/3068, Loss: 0.5411, Train Acc: 0.7817
+2025-05-20 07:13:23,592 - INFO - Epoch 5, Step 900/3068, Loss: 0.5418, Train Acc: 0.7814
+2025-05-20 07:13:57,480 - INFO - Epoch 5, Step 1000/3068, Loss: 0.5431, Train Acc: 0.7807
+2025-05-20 07:14:31,403 - INFO - Epoch 5, Step 1100/3068, Loss: 0.5436, Train Acc: 0.7805
+2025-05-20 07:15:05,354 - INFO - Epoch 5, Step 1200/3068, Loss: 0.5437, Train Acc: 0.7803
+2025-05-20 07:15:39,312 - INFO - Epoch 5, Step 1300/3068, Loss: 0.5416, Train Acc: 0.7814
+2025-05-20 07:16:13,295 - INFO - Epoch 5, Step 1400/3068, Loss: 0.5409, Train Acc: 0.7818
+2025-05-20 07:16:47,211 - INFO - Epoch 5, Step 1500/3068, Loss: 0.5406, Train Acc: 0.7821
+2025-05-20 07:17:21,112 - INFO - Epoch 5, Step 1600/3068, Loss: 0.5404, Train Acc: 0.7821
+2025-05-20 07:17:54,997 - INFO - Epoch 5, Step 1700/3068, Loss: 0.5403, Train Acc: 0.7821
+2025-05-20 07:18:28,874 - INFO - Epoch 5, Step 1800/3068, Loss: 0.5400, Train Acc: 0.7822
+2025-05-20 07:19:02,767 - INFO - Epoch 5, Step 1900/3068, Loss: 0.5394, Train Acc: 0.7824
+2025-05-20 07:19:36,691 - INFO - Epoch 5, Step 2000/3068, Loss: 0.5392, Train Acc: 0.7825
+2025-05-20 07:20:10,604 - INFO - Epoch 5, Step 2100/3068, Loss: 0.5396, Train Acc: 0.7824
+2025-05-20 07:20:44,499 - INFO - Epoch 5, Step 2200/3068, Loss: 0.5393, Train Acc: 0.7826
+2025-05-20 07:21:18,397 - INFO - Epoch 5, Step 2300/3068, Loss: 0.5392, Train Acc: 0.7827
+2025-05-20 07:21:52,321 - INFO - Epoch 5, Step 2400/3068, Loss: 0.5392, Train Acc: 0.7827
+2025-05-20 07:22:30,175 - INFO - Epoch 5, Step 2500/3068, Loss: 0.5391, Train Acc: 0.7828
+2025-05-20 07:23:03,989 - INFO - Epoch 5, Step 2600/3068, Loss: 0.5394, Train Acc: 0.7827
+2025-05-20 07:23:37,813 - INFO - Epoch 5, Step 2700/3068, Loss: 0.5395, Train Acc: 0.7826
+2025-05-20 07:24:11,688 - INFO - Epoch 5, Step 2800/3068, Loss: 0.5396, Train Acc: 0.7825
+2025-05-20 07:24:45,591 - INFO - Epoch 5, Step 2900/3068, Loss: 0.5394, Train Acc: 0.7826
+2025-05-20 07:25:19,528 - INFO - Epoch 5, Step 3000/3068, Loss: 0.5391, Train Acc: 0.7827
+2025-05-20 07:25:42,628 - INFO - [Epoch 5] avg training loss: 0.5392, accuracy: 0.7828
+2025-05-20 07:25:51,992 - INFO - [Epoch 5] eval-0 loss: 0.5185, eval accuracy: 0.7984
+2025-05-20 07:26:01,324 - INFO - [Epoch 5] eval-1 loss: 0.5017, eval accuracy: 0.8063
+2025-05-20 07:26:01,364 - INFO - === Epoch 6/6 ===
+2025-05-20 07:26:35,266 - INFO - Epoch 6, Step 100/3068, Loss: 0.5287, Train Acc: 0.7853
+2025-05-20 07:27:09,174 - INFO - Epoch 6, Step 200/3068, Loss: 0.5304, Train Acc: 0.7850
+2025-05-20 07:27:43,069 - INFO - Epoch 6, Step 300/3068, Loss: 0.5310, Train Acc: 0.7849
+2025-05-20 07:28:16,972 - INFO - Epoch 6, Step 400/3068, Loss: 0.5278, Train Acc: 0.7861
+2025-05-20 07:28:50,897 - INFO - Epoch 6, Step 500/3068, Loss: 0.5287, Train Acc: 0.7857
+2025-05-20 07:29:24,782 - INFO - Epoch 6, Step 600/3068, Loss: 0.5278, Train Acc: 0.7867
+2025-05-20 07:29:58,670 - INFO - Epoch 6, Step 700/3068, Loss: 0.5254, Train Acc: 0.7881
+2025-05-20 07:30:32,585 - INFO - Epoch 6, Step 800/3068, Loss: 0.5265, Train Acc: 0.7880
+2025-05-20 07:31:06,511 - INFO - Epoch 6, Step 900/3068, Loss: 0.5260, Train Acc: 0.7882
+2025-05-20 07:31:40,398 - INFO - Epoch 6, Step 1000/3068, Loss: 0.5261, Train Acc: 0.7883
+2025-05-20 07:32:14,286 - INFO - Epoch 6, Step 1100/3068, Loss: 0.5254, Train Acc: 0.7887
+2025-05-20 07:32:48,171 - INFO - Epoch 6, Step 1200/3068, Loss: 0.5245, Train Acc: 0.7892
+2025-05-20 07:33:26,004 - INFO - Epoch 6, Step 1300/3068, Loss: 0.5263, Train Acc: 0.7884
+2025-05-20 07:33:59,804 - INFO - Epoch 6, Step 1400/3068, Loss: 0.5267, Train Acc: 0.7879
+2025-05-20 07:34:33,638 - INFO - Epoch 6, Step 1500/3068, Loss: 0.5276, Train Acc: 0.7874
+2025-05-20 07:35:07,508 - INFO - Epoch 6, Step 1600/3068, Loss: 0.5281, Train Acc: 0.7873
+2025-05-20 07:35:41,388 - INFO - Epoch 6, Step 1700/3068, Loss: 0.5281, Train Acc: 0.7874
+2025-05-20 07:36:15,285 - INFO - Epoch 6, Step 1800/3068, Loss: 0.5282, Train Acc: 0.7876
+2025-05-20 07:36:49,175 - INFO - Epoch 6, Step 1900/3068, Loss: 0.5278, Train Acc: 0.7877
+2025-05-20 07:37:23,072 - INFO - Epoch 6, Step 2000/3068, Loss: 0.5279, Train Acc: 0.7878
+2025-05-20 07:37:57,031 - INFO - Epoch 6, Step 2100/3068, Loss: 0.5273, Train Acc: 0.7881
+2025-05-20 07:38:30,961 - INFO - Epoch 6, Step 2200/3068, Loss: 0.5266, Train Acc: 0.7884
+2025-05-20 07:39:04,870 - INFO - Epoch 6, Step 2300/3068, Loss: 0.5261, Train Acc: 0.7885
+2025-05-20 07:39:38,757 - INFO - Epoch 6, Step 2400/3068, Loss: 0.5262, Train Acc: 0.7886
+2025-05-20 07:40:12,689 - INFO - Epoch 6, Step 2500/3068, Loss: 0.5259, Train Acc: 0.7886
+2025-05-20 07:40:46,610 - INFO - Epoch 6, Step 2600/3068, Loss: 0.5258, Train Acc: 0.7886
+2025-05-20 07:41:20,562 - INFO - Epoch 6, Step 2700/3068, Loss: 0.5257, Train Acc: 0.7887
+2025-05-20 07:41:54,489 - INFO - Epoch 6, Step 2800/3068, Loss: 0.5252, Train Acc: 0.7890
+2025-05-20 07:42:28,410 - INFO - Epoch 6, Step 2900/3068, Loss: 0.5254, Train Acc: 0.7891
+2025-05-20 07:43:02,299 - INFO - Epoch 6, Step 3000/3068, Loss: 0.5251, Train Acc: 0.7892
+2025-05-20 07:43:29,325 - INFO - [Epoch 6] avg training loss: 0.5251, accuracy: 0.7891
+2025-05-20 07:43:38,643 - INFO - [Epoch 6] eval-0 loss: 0.5120, eval accuracy: 0.8065
+2025-05-20 07:43:47,921 - INFO - [Epoch 6] eval-1 loss: 0.5008, eval accuracy: 0.8091

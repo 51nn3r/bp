@@ -1,0 +1,60 @@
+2025-05-20 05:25:10,343 - INFO - [Epoch 1] step 100/825 loss=5.3925
+2025-05-20 05:25:36,592 - INFO - [Epoch 1] step 200/825 loss=4.7937
+2025-05-20 05:26:02,904 - INFO - [Epoch 1] step 300/825 loss=4.3852
+2025-05-20 05:26:29,202 - INFO - [Epoch 1] step 400/825 loss=4.0702
+2025-05-20 05:26:55,514 - INFO - [Epoch 1] step 500/825 loss=3.8354
+2025-05-20 05:27:21,899 - INFO - [Epoch 1] step 600/825 loss=3.6609
+2025-05-20 05:27:48,198 - INFO - [Epoch 1] step 700/825 loss=3.5216
+2025-05-20 05:28:14,478 - INFO - [Epoch 1] step 800/825 loss=3.4115
+2025-05-20 05:29:26,499 - INFO - === VAL METRICS ===
+Exact Match: 12.80
+F1-score   : 33.70
+
+2025-05-20 05:29:54,085 - INFO - [Epoch 2] step 100/825 loss=2.5690
+2025-05-20 05:30:20,338 - INFO - [Epoch 2] step 200/825 loss=2.5498
+2025-05-20 05:30:46,659 - INFO - [Epoch 2] step 300/825 loss=2.5235
+2025-05-20 05:31:12,995 - INFO - [Epoch 2] step 400/825 loss=2.5022
+2025-05-20 05:31:39,327 - INFO - [Epoch 2] step 500/825 loss=2.4862
+2025-05-20 05:32:05,667 - INFO - [Epoch 2] step 600/825 loss=2.4702
+2025-05-20 05:32:32,061 - INFO - [Epoch 2] step 700/825 loss=2.4558
+2025-05-20 05:32:58,659 - INFO - [Epoch 2] step 800/825 loss=2.4432
+2025-05-20 05:34:11,314 - INFO - === VAL METRICS ===
+Exact Match: 18.95
+F1-score   : 45.02
+
+2025-05-20 05:34:39,081 - INFO - [Epoch 3] step 100/825 loss=2.3085
+2025-05-20 05:35:05,415 - INFO - [Epoch 3] step 200/825 loss=2.2989
+2025-05-20 05:35:31,740 - INFO - [Epoch 3] step 300/825 loss=2.2924
+2025-05-20 05:35:58,072 - INFO - [Epoch 3] step 400/825 loss=2.2875
+2025-05-20 05:36:24,441 - INFO - [Epoch 3] step 500/825 loss=2.2849
+2025-05-20 05:36:50,761 - INFO - [Epoch 3] step 600/825 loss=2.2791
+2025-05-20 05:37:17,051 - INFO - [Epoch 3] step 700/825 loss=2.2735
+2025-05-20 05:37:43,692 - INFO - [Epoch 3] step 800/825 loss=2.2656
+2025-05-20 05:38:56,520 - INFO - === VAL METRICS ===
+Exact Match: 20.72
+F1-score   : 46.54
+
+2025-05-20 05:39:24,348 - INFO - [Epoch 4] step 100/825 loss=2.2143
+2025-05-20 05:39:50,672 - INFO - [Epoch 4] step 200/825 loss=2.2043
+2025-05-20 05:40:16,978 - INFO - [Epoch 4] step 300/825 loss=2.1964
+2025-05-20 05:40:43,323 - INFO - [Epoch 4] step 400/825 loss=2.1953
+2025-05-20 05:41:09,659 - INFO - [Epoch 4] step 500/825 loss=2.1898
+2025-05-20 05:41:36,018 - INFO - [Epoch 4] step 600/825 loss=2.1828
+2025-05-20 05:42:02,328 - INFO - [Epoch 4] step 700/825 loss=2.1793
+2025-05-20 05:42:28,945 - INFO - [Epoch 4] step 800/825 loss=2.1744
+2025-05-20 05:43:44,164 - INFO - === VAL METRICS ===
+Exact Match: 22.61
+F1-score   : 49.63
+
+2025-05-20 05:44:11,766 - INFO - [Epoch 5] step 100/825 loss=2.1180
+2025-05-20 05:44:38,048 - INFO - [Epoch 5] step 200/825 loss=2.1084
+2025-05-20 05:45:04,333 - INFO - [Epoch 5] step 300/825 loss=2.1104
+2025-05-20 05:45:30,636 - INFO - [Epoch 5] step 400/825 loss=2.1077
+2025-05-20 05:45:56,981 - INFO - [Epoch 5] step 500/825 loss=2.1082
+2025-05-20 05:46:23,403 - INFO - [Epoch 5] step 600/825 loss=2.1047
+2025-05-20 05:46:50,112 - INFO - [Epoch 5] step 700/825 loss=2.1005
+2025-05-20 05:47:16,460 - INFO - [Epoch 5] step 800/825 loss=2.0988
+2025-05-20 05:48:31,446 - INFO - === VAL METRICS ===
+Exact Match: 23.85
+F1-score   : 51.60
+
